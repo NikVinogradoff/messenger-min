@@ -52,6 +52,23 @@ def logout():
     return redirect("/")
 
 
+@app.route("/main_page")
+@login_required
+def main_page():
+    return render_template("main_page.html", title="Главная страница")
+
+@app.route("/chat")
+@login_required
+def chat():
+    return render_template("chat.html", title="Чат")
+
+@app.route("/profile")
+@login_required
+def profile():
+    session = db_session.create_session()
+    user = session.query(User).filter(User.id == current_user.id).first()
+    return render_template("profile.html", title="Профиль", current_user=user)
+
 if __name__ == "__main__":
     db_session.global_init("db/messenger_min.db")
     app.run("127.0.0.1", 8080)
