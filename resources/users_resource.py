@@ -16,6 +16,8 @@ def abort_if_user_not_found(user_id):
     user = session.query(User).get(user_id)
     if not user:
         abort(404, message=f"User {user_id} not found")
+    if user.is_deleted:
+        abort(410, message=f"User {user_id} is deleted")
 
 
 class UsersResource(Resource):
@@ -24,14 +26,14 @@ class UsersResource(Resource):
         session = db_session.create_session()
         user = session.query(User).get(user_id)
         return jsonify(user.to_dict(only=(
-            "id", "surname", "name", "email", "hashed_password"
-        )))
+                "id", "surname", "name", "email", "hashed_password"
+            )))
 
     def delete(self, user_id):
         abort_if_user_not_found(user_id)
         session = db_session.create_session()
         users = session.query(User).get(user_id)
-        session.delete(users)
+        users.is_deleted = True
         session.commit()
         return jsonify({'success': 'ok'})
 

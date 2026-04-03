@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from flask_login import UserMixin
 from hashlib import md5
 
@@ -15,6 +15,7 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     name = Column(String)
     email = Column(String, unique=True)
     hashed_password = Column(String)
+    is_deleted = Column(Boolean, default=False)
 
     def __repr__(self):
         return f"<Colonist> {self.id} {self.surname} {self.name}"
