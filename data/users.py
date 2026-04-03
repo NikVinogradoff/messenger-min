@@ -13,9 +13,8 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     surname = Column(String)
     name = Column(String)
-    email = Column(String)
+    email = Column(String, unique=True)
     hashed_password = Column(String)
-    username = Column(String, unique=True)
 
     def __repr__(self):
         return f"<Colonist> {self.id} {self.surname} {self.name}"
