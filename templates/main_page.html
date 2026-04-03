@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Ваши чаты</h2>
+<div class="container mt-4">
+    <h3 class="text-center mb-4 text-primary">Ваши чаты</h3>
+    <div class="text-center text-muted">
+        <p>У вас пока нет чатов.</p>
+        <a href="/create_chat" class="btn btn-primary btn-sm">Создать чат</a>
+    </div>
+</div>
 {% endblock %}

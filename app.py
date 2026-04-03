@@ -56,7 +56,8 @@ def main_page():
     if not user:
         logout_user()
         return redirect("/login")
-    return render_template("main_page.html", title="Мои чаты")
+    chats = user.chats
+    return render_template("main_page.html", title="Мои чаты", chats=chats)
 
 @app.route("/chat")
 @login_required

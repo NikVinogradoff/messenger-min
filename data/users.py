@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean
 from flask_login import UserMixin
 from hashlib import md5
 
+from sqlalchemy.orm import relationship
 from sqlalchemy_serializer import SerializerMixin
 
 from .db_session import SqlAlchemyBase
@@ -16,6 +17,8 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     email = Column(String, unique=True)
     hashed_password = Column(String)
     is_deleted = Column(Boolean, default=False)
+
+    chats = relationship("Chat", secondary="user_chat_association", back_populates="members")
 
     def __repr__(self):
         return f"<Colonist> {self.id} {self.surname} {self.name}"
