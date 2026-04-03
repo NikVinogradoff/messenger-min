@@ -1,3 +1,5 @@
+from hashlib import md5
+
 from flask import jsonify
 
 from data import db_session
@@ -26,8 +28,8 @@ class UsersResource(Resource):
         session = db_session.create_session()
         user = session.query(User).get(user_id)
         return jsonify(user.to_dict(only=(
-                "id", "surname", "name", "email", "hashed_password"
-            )))
+            "id", "surname", "name", "email", "hashed_password"
+        )))
 
     def delete(self, user_id):
         abort_if_user_not_found(user_id)
@@ -45,7 +47,7 @@ class UsersResource(Resource):
         user.surname = args['surname']
         user.name = args['name']
         user.email = args['email']
-        user.hashed_password = args['hashed_password']
+        user.hashed_password=md5(args['hashed_password'].encode()).hexdigest()
         session.commit()
         return jsonify({'success': 'ok'})
 
@@ -67,7 +69,7 @@ class UsersListResource(Resource):
             surname=args['surname'],
             name=args['name'],
             email=args['email'],
-            hashed_password=args['hashed_password'],
+            hashed_password=md5(args['hashed_password'].encode()).hexdigest()
         )
         session.add(users)
         session.commit()
