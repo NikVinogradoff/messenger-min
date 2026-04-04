@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean
 from sqlalchemy.orm import relationship
 from .db_session import SqlAlchemyBase
 
@@ -16,6 +16,8 @@ class Chat(SqlAlchemyBase):
     title = Column(String, nullable=False)
     members = relationship("User", secondary=user_chat_association, back_populates="chats")
     avatar_url = Column(String, default=None, nullable=True)
+    json_url = Column(String, default=None)
+    is_deleted = Column(Boolean, default=False)
 
     def __repr__(self):
         return f"<Chat> {self.id} '{self.title}'"

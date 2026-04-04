@@ -1,5 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Чат</h1>
+<a href="/main_page" class="btn btn-warning mt-3 ms-3">Вернуться на главную</a>
+<div class="container mt-3">
+    {% for key, message in messages.items() %}
+    {% if current_user.id == message["author_id"] %}
+    <div class="row mb-3">
+        <div class="col">
+            <div class="list-group-item justify-content-between list-group-item-secondary">
+                <div class="ms-2 me-4 text-end">
+                    <div class="fw-bold">{{ message["author_name"] }}</div>
+                    {{ message["text"] }}
+                    <div class="fst-italic text-secondary">{{ message["datetime"] }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mb-3">
+        <div class="col">
+            <div class="list-group-item d-flex justify-content-between list-group-item-secondary">
+                <div class="ms-2 me-auto">
+                    <div class="fw-bold">{{ message["author_name"] }}</div>
+                    {{ message["text"] }}
+                    <div class="fst-italic text-end text-secondary">{{ message["datetime"] }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <form method="post" enctype="multipart/form-data">
+        <div class="row">
+            <div class="col-sm-6 col-md-11">
+                <textarea class="form-control mt-4" aria-label="With textarea" id="text" name="text"></textarea>
+            </div>
+            <div class="col-6 col-md-1 mt-4">
+                <button type="submit" class="btn btn-primary">Отправить</button>
+            </div>
+        </div>
+    </form>
+</div>
 {% endblock %}

@@ -1,3 +1,5 @@
+import json
+
 from config import *
 
 
@@ -61,10 +63,24 @@ def main_page():
     return render_template("main_page.html", title="Мои чаты", chats=chats)
 
 
-@app.route("/chat/<int:chat_id>")
+@app.route("/chat/<int:chat_id>", methods=['GET', 'POST'])
 @login_required
 def chat(chat_id):
-    return render_template("chat.html", title="Чат", chat_id=chat_id)
+    session = db_session.create_session()
+    chatting = session.query(Chat).filter(Chat.id == chat_id).first()
+    filename = f"chats_jsons/{chatting.json_url}.json"
+    with open(filename, "r") as json_file:
+        messages = json.load(json_file)
+    if request.method == 'POST':
+        with open(filename, "w") as old_json:
+            messages[f'message_{len(messages.keys()) + 1}'] = {
+                "author_id": current_user.id,
+                "author_name": f"{current_user.name} {current_user.surname}",
+                "text": request.form.get("text"),
+                "datetime": str(datetime.datetime.now())[:-7]
+            }
+            json.dump(messages, old_json)
+    return render_template("chat.html", title=chatting.title, messages=messages)
 
 
 @app.route("/create_chat", methods=["GET", "POST"])
@@ -74,7 +90,8 @@ def create_chat():
         title = request.form.get("title")
         avatar = request.files.get("avatar")
         if not title:
-            return render_template("create_chat.html", error="Введите название чата", title="Создать чат")
+            return render_template("create_chat.html", error="Введите название чата",
+                                   title="Создать чат")
         session = db_session.create_session()
         chat = Chat(title=title)
         user = session.merge(current_user)
@@ -96,6 +113,10 @@ def create_chat():
                 os.rename(old_path, new_path)
             chat.avatar_url = f"img/chat_avatars/{new_filename}"
             session.commit()
+        with open(f"chats_jsons/chat_{chat.id}.json", "w") as chat_json:
+            json.dump({}, chat_json)
+        chat.json_url = f"chat_{chat.id}"
+        session.commit()
         return redirect("/main_page")
 
     return render_template("create_chat.html", title="Создать чат")
