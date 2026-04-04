@@ -7,7 +7,10 @@
         <div class="list-group shadow-sm">
         {% for chat in chats %}
             {% if not chat.is_deleted %}
-            <a href="/chat/{{ chat.id }}" class="list-group-item list-group-item-action d-flex align-items-center">
+            <div class="list-group-item d-flex align-items-center position-relative" style="padding-left: 60px;">
+                <a href="/chat/{{ chat.id }}"
+                   class="position-absolute start-0 top-0 bottom-0"
+                   style="width: calc(100% - 60px); z-index: 1; text-decoration: none; color: inherit;"></a>
                 <div class="me-3">
                     {% if chat.avatar_url %}
                         <img src="{{ url_for('static', filename=chat.avatar_url) }}"
@@ -22,11 +25,16 @@
                         </div>
                     {% endif %}
                 </div>
-                <div>
+                <div class="flex-grow-1">
                     <h5 class="mb-0">{{ chat.title }}</h5>
                     <small class="text-muted">Участников: {{ chat.members|length }}</small>
                 </div>
-            </a>
+                <a href="/confirm_delete/{{ chat.id }}"
+                   class="btn btn-outline-danger btn-sm ms-2"
+                   style="z-index: 2;">
+                    &times;
+                </a>
+            </div>
             {% endif %}
         {% endfor %}
         </div>

@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean
 from sqlalchemy.orm import relationship
+from sqlalchemy_serializer import SerializerMixin
+
 from .db_session import SqlAlchemyBase
 
 user_chat_association = Table(
@@ -10,7 +12,7 @@ user_chat_association = Table(
 )
 
 
-class Chat(SqlAlchemyBase):
+class Chat(SqlAlchemyBase, SerializerMixin):
     __tablename__ = 'chats'
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String, nullable=False)

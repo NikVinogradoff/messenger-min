@@ -12,6 +12,7 @@ from forms.login_form import LoginForm
 from forms.register_form import RegisterForm
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
+from resources.chats_resource import ChatsResource, ChatsListResource
 from resources.users_resource import UsersResource, UsersListResource
 
 import datetime
@@ -22,6 +23,8 @@ app = Flask(__name__)
 api = Api(app)
 api.add_resource(UsersResource, '/api/users/<int:user_id>')
 api.add_resource(UsersListResource, '/api/users/')
+api.add_resource(ChatsResource, '/api/chats/<int:chat_id>')
+api.add_resource(ChatsListResource, '/api/chats/')
 
 app.config["SECRET_KEY"] = "password123"
 

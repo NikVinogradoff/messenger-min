@@ -1,4 +1,4 @@
-import json
+from flask_restful import abort
 
 from config import *
 
@@ -147,6 +147,28 @@ def profile():
     if os.path.exists(avatar_full_path):
         avatar_url = url_for('static', filename=avatar_path) + "?t=" + str(os.path.getmtime(avatar_full_path))
     return render_template("profile.html", title="Профиль", current_user=user, avatar_url=avatar_url)
+
+
+@app.route("/confirm_delete/<int:chat_id>")
+@login_required
+def confirm_delete(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).get(chat_id)
+    if not chat or current_user not in chat.members:
+        abort(404)
+    return render_template("confirm_delete.html", chat=chat)
+
+
+@app.route("/delete_chat/<int:chat_id>", methods=["POST"])
+@login_required
+def delete_chat(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).get(chat_id)
+    if not chat or current_user not in chat.members:
+        abort(404)
+    chat.is_deleted = True
+    session.commit()
+    return redirect("/main_page")
 
 
 if __name__ == "__main__":
