@@ -130,4 +130,4 @@ def profile():
 
 if __name__ == "__main__":
     db_session.global_init("db/messenger_min.db")
-    app.run("127.0.0.1", 8080)
+    serve(app, host="127.0.0.1", port=8080)
