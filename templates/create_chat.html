@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 500px;">
+    <h4>Создать чат</h4>
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="title" class="form-label">Название чата</label>
+            <input type="text" class="form-control" id="title" name="title" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="avatar" class="form-label">Аватар чата</label>
+            <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
+            <small class="text-muted">Поддерживаемые форматы: PNG, JPG, GIF.</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Создать</button>
+        <a href="/main_page" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}

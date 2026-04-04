@@ -4,14 +4,15 @@
 <div class="container mt-4">
     <div class="card shadow-sm border-0 mx-auto" style="max-width: 500px;">
         <div class="card-body text-center p-4">
-                        <form method="POST" enctype="multipart/form-data" class="mb-3">
+            <form method="POST" enctype="multipart/form-data" class="mb-3">
                 <label class="d-block position-relative d-inline-block">
                     <img src="{{ avatar_url if avatar_url else url_for('static', filename='img/user_avatar.png') }}"
-                         alt="{{ url_for('static', filename='img/min_logo.png') }}"
+                         alt="Аватар"
                          class="rounded-circle border-3 border-primary"
                          width="96"
                          height="96"
-                         style="object-fit: cover; cursor: pointer;">
+                         style="object-fit: cover; cursor: pointer;"
+                         id="avatar-preview">
                     <input type="file"
                            name="avatar"
                            accept="image/*"

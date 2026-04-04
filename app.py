@@ -1,3 +1,5 @@
+import requests
+
 from config import *
 
 
@@ -49,6 +51,7 @@ def logout():
     logout_user()
     return redirect("/")
 
+
 @app.route("/main_page")
 def main_page():
     session = db_session.create_session()
@@ -59,14 +62,46 @@ def main_page():
     chats = user.chats
     return render_template("main_page.html", title="Мои чаты", chats=chats)
 
+
 @app.route("/chat")
 @login_required
 def chat():
     return render_template("chat.html", title="Чат")
 
+
 @app.route("/create_chat", methods=["GET", "POST"])
+@login_required
 def create_chat():
-    pass
+    if request.method == "POST":
+        title = request.form.get("title")
+        avatar = request.files.get("avatar")
+        if not title:
+            return render_template("create_chat.html", error="Введите название чата", title="Создать чат")
+        session = db_session.create_session()
+        chat = Chat(title=title)
+        user = session.merge(current_user)
+        chat.members.append(user)
+        if avatar and avatar.filename:
+            avatars_dir = os.path.join(app.static_folder, "img", "chat_avatars")
+            os.makedirs(avatars_dir, exist_ok=True)
+            filename = f"chat_{chat.id or hash(title)}.png"
+            filepath = os.path.join(avatars_dir, filename)
+            avatar.save(filepath)
+            chat.avatar_url = f"img/chat_avatars/{filename}"
+        session.add(chat)
+        session.commit()
+        if not chat.id:
+            new_filename = f"chat_{chat.id}.png"
+            old_path = os.path.join(avatars_dir, f"chat_{hash(title)}.png")
+            new_path = os.path.join(avatars_dir, new_filename)
+            if os.path.exists(old_path):
+                os.rename(old_path, new_path)
+            chat.avatar_url = f"img/chat_avatars/{new_filename}"
+            session.commit()
+        return redirect("/main_page")
+
+    return render_template("create_chat.html", title="Создать чат")
+
 
 @app.route("/profile", methods=["GET", "POST"])
 @login_required

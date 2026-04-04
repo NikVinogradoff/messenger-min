@@ -5,6 +5,7 @@ from werkzeug.utils import redirect, secure_filename
 
 from data import db_session
 from data.users import User
+from data.chats import Chat
 
 from forms.login_form import LoginForm
 from forms.register_form import RegisterForm
