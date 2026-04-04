@@ -7,7 +7,7 @@ def user_loader(user_id):
     return session.get(User, user_id)
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
@@ -61,10 +61,10 @@ def main_page():
     return render_template("main_page.html", title="Мои чаты", chats=chats)
 
 
-@app.route("/chat")
+@app.route("/chat/<int:chat_id>")
 @login_required
-def chat():
-    return render_template("chat.html", title="Чат")
+def chat(chat_id):
+    return render_template("chat.html", title="Чат", chat_id=chat_id)
 
 
 @app.route("/create_chat", methods=["GET", "POST"])
