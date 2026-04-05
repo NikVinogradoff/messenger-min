@@ -21,6 +21,7 @@ class Chat(SqlAlchemyBase, SerializerMixin):
     avatar_url = Column(String, default=None, nullable=True)
     json_url = Column(String, default=None)
     is_deleted = Column(Boolean, default=False)
+    is_public = Column(Boolean, default=False)
 
     def __repr__(self):
         return f"<Chat> {self.id} '{self.title}'"

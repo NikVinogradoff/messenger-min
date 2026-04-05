@@ -12,6 +12,11 @@
         <a href="{{ url_for('add_user_to_chat', chat_id=chatting.id) }}" class="btn btn-outline-success btn-sm me-2">
             + Пригласить
         </a>
+        {% if current_user.id == chatting.creator_id %}
+        <a href="{{ url_for('edit_chat', chat_id=chatting.id) }}" class="btn btn-outline-primary btn-sm me-2">
+            Редактировать
+        </a>
+        {% endif %}
         <a href="{{ url_for('confirm_leave_chat', chat_id=chatting.id) }}" class="btn btn-outline-danger btn-sm">
             Выйти
         </a>

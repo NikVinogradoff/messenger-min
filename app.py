@@ -61,7 +61,8 @@ def main_page():
         logout_user()
         return redirect("/login")
     chats = user.chats
-    return render_template("main_page.html", title="Мои чаты", chats=chats)
+    public_chats = session.query(Chat).filter(Chat.is_public == True, ~Chat.members.contains(user)).all()
+    return render_template("main_page.html", title="Мои чаты", chats=chats, public_chats=public_chats)
 
 
 @app.route("/chat/<int:chat_id>", methods=['GET', 'POST'])
@@ -69,6 +70,8 @@ def main_page():
 def chat(chat_id):
     session = db_session.create_session()
     chatting = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chatting.is_public and current_user not in chatting.members:
+        abort(403)
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r") as json_file:
         messages = json.load(json_file)
@@ -90,12 +93,13 @@ def create_chat():
     if request.method == "POST":
         title = request.form.get("title")
         avatar = request.files.get("avatar")
+        is_public = bool(request.form.get("is_public"))
         if not title:
             return render_template("create_chat.html", error="Введите название чата",
                                    title="Создать чат")
         session = db_session.create_session()
         user = session.merge(current_user)
-        chat = Chat(title=title, creator_id=user.id)
+        chat = Chat(title=title, creator_id=user.id, is_public=is_public)
         chat.members.append(user)
         if avatar and avatar.filename:
             avatars_dir = os.path.join(app.static_folder, "img", "chat_avatars")
@@ -259,6 +263,21 @@ def chat_members(chat_id):
     return render_template("chat_members.html", chat=chat)
 
 
+@app.route("/join_public_chat/<int:chat_id>", methods=["POST"])
+@login_required
+def join_public_chat(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id, Chat.is_public == True).first()
+    if not chat:
+        abort(404)
+    user = session.merge(current_user)
+    if user not in chat.members:
+        chat.members.append(user)
+        session.commit()
+    return redirect(f"/chat/{chat_id}")
+
+
+
 @app.route("/chat/<int:chat_id>/confirm_remove/<int:user_id>")
 @login_required
 def confirm_remove_user(chat_id, user_id):
@@ -272,6 +291,60 @@ def confirm_remove_user(chat_id, user_id):
         abort(403)
 
     return render_template("confirm_remove_user.html", chat=chat, user=user_to_remove)
+
+
+@app.route("/chat/<int:chat_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_chat(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat:
+        abort(404)
+    if current_user.id != chat.creator_id:
+        abort(403)
+
+    error = None
+    if request.method == "POST":
+        title = request.form.get("title")
+        avatar = request.files.get("avatar")
+        is_public = bool(request.form.get("is_public"))
+
+        if not title:
+            error = "Введите название чата"
+        else:
+            chat.title = title
+            chat.is_public = is_public
+
+            if avatar and avatar.filename:
+                avatars_dir = os.path.join(app.static_folder, "img", "chat_avatars")
+                os.makedirs(avatars_dir, exist_ok=True)
+                filename = f"chat_{chat.id}.png"
+                filepath = os.path.join(avatars_dir, filename)
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                avatar.save(filepath)
+                chat.avatar_url = f"img/chat_avatars/{filename}"
+
+            session.commit()
+            return redirect(f"/chat/{chat_id}")
+
+    return render_template("edit_chat.html", chat=chat, error=error)
+
+
+@app.route("/search_chats", methods=["GET"])
+@login_required
+def search_chats():
+    query = request.args.get("q", "").strip()
+    session = db_session.create_session()
+    user = session.merge(current_user)
+    chats = session.query(Chat).filter(
+        Chat.is_public == True,
+        Chat.is_deleted == False,
+        Chat.title.ilike(f"%{query}%"),
+        ~Chat.members.contains(user)
+    ).all()
+
+    return render_template("search_results.html", chats=chats, query=query)
 
 
 if __name__ == "__main__":

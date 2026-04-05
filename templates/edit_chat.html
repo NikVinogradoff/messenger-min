@@ -4,27 +4,36 @@
 <div class="container mt-5">
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white">
-            <h5>Создать чат</h5>
+            <h5>Редактировать чат</h5>
         </div>
         <div class="card-body">
             <form method="post" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="title" class="form-label">Название чата</label>
-                    <input type="text" class="form-control" id="title" name="title" required>
+                    <input type="text" class="form-control" id="title" name="title" value="{{ chat.title }}" required>
                 </div>
                 <div class="mb-3">
                     <label for="avatar" class="form-label">Аватар чата</label>
                     <input class="form-control" type="file" id="avatar" name="avatar" accept="image/*">
+                    {% if chat.avatar_url %}
+                    <div class="mt-2">
+                        <img src="{{ url_for('static', filename=chat.avatar_url) }}" 
+                             alt="Текущий аватар" 
+                             class="rounded-circle" width="60" height="60" style="object-fit: cover;">
+                        <small class="text-muted"> — текущий аватар</small>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="is_public" name="is_public" value="1">
+                    <input type="checkbox" class="form-check-input" id="is_public" name="is_public" value="1"
+                           {% if chat.is_public %}checked{% endif %}>
                     <label class="form-check-label" for="is_public">Сделать чат публичным</label>
                 </div>
                 {% if error %}
                 <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
-                <button type="submit" class="btn btn-primary">Создать</button>
-                <a href="/main_page" class="btn btn-secondary">Отмена</a>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <a href="/chat/{{ chat.id }}" class="btn btn-secondary">Отмена</a>
             </form>
         </div>
     </div>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Результаты поиска</h3>
+    {% if query %}
+        <p>Найдено публичных чатов по запросу "<strong>{{ query }}</strong>": {{ chats|length }}</p>
+    {% endif %}
+    {% if chats %}
+        <div class="list-group shadow-sm">
+        {% for chat in chats %}
+            <div class="list-group-item d-flex align-items-center">
+                <div class="me-3">
+                    {% if chat.avatar_url %}
+                        <img src="{{ url_for('static', filename=chat.avatar_url) }}"
+                             alt="Аватар"
+                             class="rounded-circle"
+                             width="48" height="48"
+                             style="object-fit: cover;">
+                    {% else %}
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 48px; height: 48px;">
+                            {{ chat.title[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="mb-0">{{ chat.title }}</h5>
+                    <small class="text-muted">Участников: {{ chat.members|length }}</small>
+                </div>
+                <form action="/join_public_chat/{{ chat.id }}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-success btn-sm">Присоединиться</button>
+                </form>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info mt-3">
+            {% if query %}
+                Нет публичных чатов, соответствующих запросу "<strong>{{ query }}</strong>".
+            {% else %}
+                Введите название чата для поиска.
+            {% endif %}
+        </div>
+    {% endif %}
+    <div class="mt-4">
+        <a href="/main_page" class="btn btn-secondary">Назад</a>
+    </div>
+</div>
+{% endblock %}

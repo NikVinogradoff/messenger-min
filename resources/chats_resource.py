@@ -13,6 +13,7 @@ parser.add_argument('title', required=True, type=str)
 parser.add_argument('creator_id', required=True, type=int)
 parser.add_argument('avatar_url', type=str)
 parser.add_argument('member_ids', type=int, action='append', default=[])
+parser.add_argument('is_public', type=bool, default=False)
 
 
 def abort_if_chat_not_found(chat_id):
@@ -35,7 +36,8 @@ class ChatsResource(Resource):
             'avatar_url': chat.avatar_url,
             'json_url': chat.json_url,
             'creator_id': chat.creator_id,
-            'members_count': len(chat.members)
+            'members_count': len(chat.members),
+            'is_public': chat.is_public
         })
 
     def delete(self, chat_id):
@@ -71,6 +73,8 @@ class ChatsResource(Resource):
         elif 'member_ids' in args and args['member_ids'] == []:
             creator = session.query(User).get(chat.creator_id)
             chat.members = [creator]
+        if 'is_public' in args:
+            chat.is_public = args['is_public']
         session.commit()
         return jsonify({'success': 'ok'})
 
@@ -87,7 +91,8 @@ class ChatsListResource(Resource):
                     'title': chat.title,
                     'avatar_url': chat.avatar_url,
                     'json_url': chat.json_url,
-                    'members_count': len(chat.members)
+                    'members_count': len(chat.members),
+                    'is_public': chat.is_public
                 }
                 for chat in chats
             ]
@@ -103,6 +108,7 @@ class ChatsListResource(Resource):
             title=args['title'],
             creator_id=args['creator_id'],
             avatar_url=args['avatar_url'] or None,
+            is_public=args['is_public']
         )
         new_chat.members.append(creator)
         member_ids = args['member_ids']
