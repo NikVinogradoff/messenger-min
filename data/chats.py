@@ -16,6 +16,7 @@ class Chat(SqlAlchemyBase, SerializerMixin):
     __tablename__ = 'chats'
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String, nullable=False)
+    creator_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # Кто создал чат
     members = relationship("User", secondary=user_chat_association, back_populates="chats")
     avatar_url = Column(String, default=None, nullable=True)
     json_url = Column(String, default=None)

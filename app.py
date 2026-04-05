@@ -53,6 +53,7 @@ def logout():
 
 
 @app.route("/main_page")
+@login_required
 def main_page():
     session = db_session.create_session()
     user = session.query(User).filter(User.id == current_user.id).first()
@@ -93,8 +94,8 @@ def create_chat():
             return render_template("create_chat.html", error="Введите название чата",
                                    title="Создать чат")
         session = db_session.create_session()
-        chat = Chat(title=title)
         user = session.merge(current_user)
+        chat = Chat(title=title, creator_id=user.id)
         chat.members.append(user)
         if avatar and avatar.filename:
             avatars_dir = os.path.join(app.static_folder, "img", "chat_avatars")
@@ -118,7 +119,6 @@ def create_chat():
         chat.json_url = f"chat_{chat.id}"
         session.commit()
         return redirect("/main_page")
-
     return render_template("create_chat.html", title="Создать чат")
 
 
@@ -154,7 +154,7 @@ def profile():
 def confirm_delete(chat_id):
     session = db_session.create_session()
     chat = session.query(Chat).get(chat_id)
-    if not chat or current_user not in chat.members:
+    if not chat or current_user not in chat.members or chat.creator_id != current_user.id:
         abort(404)
     return render_template("confirm_delete.html", chat=chat)
 
@@ -164,8 +164,8 @@ def confirm_delete(chat_id):
 def delete_chat(chat_id):
     session = db_session.create_session()
     chat = session.query(Chat).get(chat_id)
-    if not chat or current_user not in chat.members:
-        abort(404)
+    if not chat or chat.creator_id != current_user.id:
+        abort(403)
     chat.is_deleted = True
     session.commit()
     return redirect("/main_page")
@@ -190,12 +190,13 @@ def add_user_to_chat(chat_id):
             if not user_to_add:
                 error = "Пользователь с таким email не найден"
             elif user_to_add in chat.members:
-                error = "Пользователь уже состоит в этомям чате"
+                error = "Пользователь уже состоит в этом чате"
             else:
                 chat.members.append(user_to_add)
                 session.commit()
                 return redirect(f"/chat/{chat_id}")
     return render_template("add_user.html", chat=chat, error=error)
+
 
 @app.route("/chat/<int:chat_id>/leave", methods=["POST"])
 @login_required
@@ -211,6 +212,67 @@ def leave_chat(chat_id):
     if len(chat.members) == 0:
         chat.is_deleted = True
     return redirect("/main_page")
+
+
+@app.route("/confirm_leave_chat/<int:chat_id>")
+@login_required
+def confirm_leave_chat(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat:
+        abort(404)
+    if current_user not in chat.members:
+        abort(403)
+    return render_template("confirm_leave_chat.html", chat=chat)
+
+
+@app.route("/chat/<int:chat_id>/remove_user/<int:user_id>", methods=["POST"])
+@login_required
+def remove_user_from_chat(chat_id, user_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    user_to_remove = session.query(User).filter(User.id == user_id).first()
+    if not chat or not user_to_remove:
+        abort(404)
+    if current_user.id != chat.creator_id:
+        abort(403)
+    if current_user.id == user_to_remove.id:
+        abort(400, description="Нельзя выгнать самого себя. Используйте 'Выйти из чата'.")
+    if user_to_remove not in chat.members:
+        abort(400, description="Пользователь не состоит в этом чате.")
+    chat.members.remove(user_to_remove)
+    session.commit()
+    return redirect(f"/chat/{chat_id}")
+
+
+@app.route("/chat/<int:chat_id>/members")
+@login_required
+def chat_members(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+
+    if not chat:
+        abort(404)
+    if current_user not in chat.members:
+        abort(403)
+
+    return render_template("chat_members.html", chat=chat)
+
+
+@app.route("/chat/<int:chat_id>/confirm_remove/<int:user_id>")
+@login_required
+def confirm_remove_user(chat_id, user_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    user_to_remove = session.query(User).filter(User.id == user_id).first()
+
+    if not chat or not user_to_remove:
+        abort(404)
+    if current_user.id != chat.creator_id:
+        abort(403)
+
+    return render_template("confirm_remove_user.html", chat=chat, user=user_to_remove)
+
 
 if __name__ == "__main__":
     db_session.global_init("db/messenger_min.db")

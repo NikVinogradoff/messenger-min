@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Участники чата {{ chat.title }}:</h4>
+        <a href="{{ url_for('chat', chat_id=chat.id) }}" class="btn btn-secondary btn-sm">Назад в чат</a>
+    </div>
+    <ul class="list-group list-group-flush shadow-sm">
+        {% for member in chat.members %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                {{ member.name }} {{ member.surname }}
+                {% if member.id == chat.creator_id %}
+                    <small class="text-muted">(создатель)</small>
+                {% endif %}
+            </div>
+            {% if current_user.id == chat.creator_id and current_user.id != member.id %}
+                <a href="{{ url_for('confirm_remove_user', chat_id=chat.id, user_id=member.id) }}"
+                   class="btn btn-sm btn-outline-danger">
+                    Выгнать
+                </a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
