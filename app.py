@@ -190,13 +190,27 @@ def add_user_to_chat(chat_id):
             if not user_to_add:
                 error = "Пользователь с таким email не найден"
             elif user_to_add in chat.members:
-                error = "Пользователь уже состоит в этом чате"
+                error = "Пользователь уже состоит в этомям чате"
             else:
                 chat.members.append(user_to_add)
                 session.commit()
                 return redirect(f"/chat/{chat_id}")
     return render_template("add_user.html", chat=chat, error=error)
 
+@app.route("/chat/<int:chat_id>/leave", methods=["POST"])
+@login_required
+def leave_chat(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat:
+        abort(404)
+    if current_user not in chat.members:
+        abort(403)
+    chat.members.remove(current_user)
+    session.commit()
+    if len(chat.members) == 0:
+        chat.is_deleted = True
+    return redirect("/main_page")
 
 if __name__ == "__main__":
     db_session.global_init("db/messenger_min.db")
