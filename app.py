@@ -1,5 +1,3 @@
-from flask_restful import abort
-
 from config import *
 
 
@@ -84,7 +82,18 @@ def chat(chat_id):
                 "datetime": str(datetime.datetime.now())[:-7]
             }
             json.dump(messages, old_json)
-    return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting)
+    user_avatars = {}
+    for member in chatting.members:
+        avatar_path = f"img/avatars/user_{member.id}.png"
+        avatar_full_path = os.path.join(app.root_path, 'static', avatar_path)
+        if os.path.exists(avatar_full_path):
+            user_avatars[member.id] = url_for('static', filename=avatar_path) + \
+                                      "?t=" + str(os.path.getmtime(avatar_full_path))
+        else:
+            user_avatars[member.id] = None
+
+    return render_template("chat.html", title=chatting.title, messages=messages,
+                           chatting=chatting, user_avatars=user_avatars)
 
 
 @app.route("/create_chat", methods=["GET", "POST"])
@@ -275,7 +284,6 @@ def join_public_chat(chat_id):
         chat.members.append(user)
         session.commit()
     return redirect(f"/chat/{chat_id}")
-
 
 
 @app.route("/chat/<int:chat_id>/confirm_remove/<int:user_id>")
