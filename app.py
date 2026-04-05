@@ -74,11 +74,24 @@ def chat(chat_id):
     with open(filename, "r") as json_file:
         messages = json.load(json_file)
     if request.method == 'POST':
+        raw_text = request.form.get("text", "").strip()
+        if len(raw_text) > 500:
+            raw_text = raw_text[:500]
+
+        lines = raw_text.split('\n')
+        wrapped_lines = []
+        for line in lines:
+            while len(line) > 60:
+                wrapped_lines.append(line[:60])
+                line = line[60:]
+            wrapped_lines.append(line)
+        formatted_text = '\n'.join(wrapped_lines)
+
         with open(filename, "w") as old_json:
             messages[f'message_{len(messages.keys()) + 1}'] = {
                 "author_id": current_user.id,
                 "author_name": f"{current_user.name} {current_user.surname}",
-                "text": request.form.get("text"),
+                "text": formatted_text,
                 "datetime": str(datetime.datetime.now())[:-7]
             }
             json.dump(messages, old_json)
