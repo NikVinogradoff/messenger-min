@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5>Пригласить пользователя в чат "{{ chat.title }}"</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email пользователя</label>
+                    <input type="email"
+                           class="form-control"
+                           id="email"
+                           name="email"
+                           placeholder="user@example.com"
+                           required>
+                </div>
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <button type="submit" class="btn btn-primary">Пригласить</button>
+                <a href="{{ url_for('chat', chat_id=chat.id) }}" class="btn btn-secondary">Назад в чат</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

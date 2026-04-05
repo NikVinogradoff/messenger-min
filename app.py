@@ -80,7 +80,7 @@ def chat(chat_id):
                 "datetime": str(datetime.datetime.now())[:-7]
             }
             json.dump(messages, old_json)
-    return render_template("chat.html", title=chatting.title, messages=messages)
+    return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting)
 
 
 @app.route("/create_chat", methods=["GET", "POST"])
@@ -169,6 +169,33 @@ def delete_chat(chat_id):
     chat.is_deleted = True
     session.commit()
     return redirect("/main_page")
+
+
+@app.route("/chat/<int:chat_id>/add_user", methods=["GET", "POST"])
+@login_required
+def add_user_to_chat(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat:
+        abort(404)
+    if current_user not in chat.members:
+        abort(403)
+    error = None
+    if request.method == "POST":
+        email = request.form.get("email")
+        if not email:
+            error = "Введите email пользователя"
+        else:
+            user_to_add = session.query(User).filter(User.email == email).first()
+            if not user_to_add:
+                error = "Пользователь с таким email не найден"
+            elif user_to_add in chat.members:
+                error = "Пользователь уже состоит в этом чате"
+            else:
+                chat.members.append(user_to_add)
+                session.commit()
+                return redirect(f"/chat/{chat_id}")
+    return render_template("add_user.html", chat=chat, error=error)
 
 
 if __name__ == "__main__":
