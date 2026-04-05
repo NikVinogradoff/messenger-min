@@ -68,7 +68,7 @@ def main_page():
 def chat(chat_id):
     session = db_session.create_session()
     chatting = session.query(Chat).filter(Chat.id == chat_id).first()
-    if not chatting.is_public and current_user not in chatting.members:
+    if not chatting or (not chatting.is_public and current_user not in chatting.members):
         abort(403)
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r") as json_file:
@@ -77,7 +77,6 @@ def chat(chat_id):
         raw_text = request.form.get("text", "").strip()
         if len(raw_text) > 500:
             raw_text = raw_text[:500]
-
         lines = raw_text.split('\n')
         wrapped_lines = []
         for line in lines:
@@ -86,15 +85,34 @@ def chat(chat_id):
                 line = line[60:]
             wrapped_lines.append(line)
         formatted_text = '\n'.join(wrapped_lines)
-
+        file_url = None
+        safe_filename = None
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and file.filename != '':
+                allowed = file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.txt', '.mp4'))
+                if not allowed:
+                    return render_template("chat.html", title=chatting.title, messages=messages,
+                                           chatting=chatting, user_avatars={},
+                                           message_error="Разрешены только: PNG, JPG, JPEG, GIF, TXT, MP4")
+                chat_files_dir = os.path.join(app.static_folder, "chat_files", str(chatting.id))
+                os.makedirs(chat_files_dir, exist_ok=True)
+                safe_filename = secure_filename(file.filename)
+                filepath = os.path.join(chat_files_dir, safe_filename)
+                file.save(filepath)
+                file_url = url_for('static', filename=f"chat_files/{chatting.id}/{safe_filename}")
         with open(filename, "w") as old_json:
-            messages[f'message_{len(messages.keys()) + 1}'] = {
+            message_key = f'message_{len(messages.keys()) + 1}'
+            messages[message_key] = {
                 "author_id": current_user.id,
                 "author_name": f"{current_user.name} {current_user.surname}",
                 "text": formatted_text,
-                "datetime": str(datetime.datetime.now())[:-7]
+                "datetime": str(datetime.datetime.now())[:-7],
+                "file_url": file_url,
+                "filename": safe_filename
             }
             json.dump(messages, old_json)
+        return redirect(f"/chat/{chat_id}")
     user_avatars = {}
     for member in chatting.members:
         avatar_path = f"img/avatars/user_{member.id}.png"
@@ -104,9 +122,9 @@ def chat(chat_id):
                                       "?t=" + str(os.path.getmtime(avatar_full_path))
         else:
             user_avatars[member.id] = None
+    return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting,
+                           user_avatars=user_avatars)
 
-    return render_template("chat.html", title=chatting.title, messages=messages,
-                           chatting=chatting, user_avatars=user_avatars)
 
 
 @app.route("/create_chat", methods=["GET", "POST"])
@@ -366,6 +384,59 @@ def search_chats():
     ).all()
 
     return render_template("search_results.html", chats=chats, query=query)
+
+
+@app.route("/chat/<int:chat_id>/edit/<message_key>", methods=["POST"])
+@login_required
+def edit_message(chat_id, message_key):
+    session = db_session.create_session()
+    chatting = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chatting or current_user not in chatting.members:
+        abort(403)
+    filename = f"chats_jsons/{chatting.json_url}.json"
+    with open(filename, "r") as json_file:
+        messages = json.load(json_file)
+    if message_key not in messages:
+        abort(404)
+    if messages[message_key]["author_id"] != current_user.id:
+        abort(403)
+    raw_text = request.form.get("text", "").strip()
+    if len(raw_text) > 500:
+        raw_text = raw_text[:500]
+    lines = raw_text.split('\n')
+    wrapped_lines = []
+    for line in lines:
+        while len(line) > 60:
+            wrapped_lines.append(line[:60])
+            line = line[60:]
+        wrapped_lines.append(line)
+    formatted_text = '\n'.join(wrapped_lines)
+    messages[message_key]["text"] = formatted_text
+    messages[message_key]["edited"] = True
+    messages[message_key]["edit_time"] = str(datetime.datetime.now())[:-7]
+    with open(filename, "w") as f:
+        json.dump(messages, f)
+    return redirect(f"/chat/{chat_id}")
+
+
+@app.route("/chat/<int:chat_id>/delete/<message_key>", methods=["POST"])
+@login_required
+def delete_message(chat_id, message_key):
+    session = db_session.create_session()
+    chatting = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chatting or current_user not in chatting.members:
+        abort(403)
+    filename = f"chats_jsons/{chatting.json_url}.json"
+    with open(filename, "r") as json_file:
+        messages = json.load(json_file)
+    if message_key not in messages:
+        abort(404)
+    if messages[message_key]["author_id"] != current_user.id and current_user.id != chatting.creator_id:
+        abort(403)
+    del messages[message_key]
+    with open(filename, "w") as f:
+        json.dump(messages, f)
+    return redirect(f"/chat/{chat_id}")
 
 
 if __name__ == "__main__":
