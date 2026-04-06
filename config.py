@@ -19,6 +19,8 @@ import datetime
 
 import json
 
+from PIL import Image
+
 app = Flask(__name__)
 api = Api(app)
 api.add_resource(UsersResource, '/api/users/<int:user_id>')

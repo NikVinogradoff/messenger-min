@@ -3,7 +3,12 @@
 {% block content %}
 <a href="/main_page" class="btn btn-warning mt-3 ms-3">Вернуться на главную</a>
 <div class="d-flex justify-content-between align-items-center mb-3 ms-3 me-3">
+    {% if chatting.is_group %}
     <h4 class="mt-3">{{ title }}</h4>
+    {% else %}
+    {% set chat_title = chatting.title.split('; ')[user.id == chatting.creator_id] %}
+    <h4 class="mt-3">{{ title.split(', ')[0] }}</h4>
+    {% endif %}
     {% if chatting.is_group %}
         <div>
             <a href="{{ url_for('chat_members', chat_id=chatting.id) }}"

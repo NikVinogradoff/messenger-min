@@ -30,7 +30,6 @@ def register():
     reg_form = RegisterForm()
     if reg_form.validate_on_submit():
         session = db_session.create_session()
-
         guy = User(
             surname=reg_form.surname.data,
             name=reg_form.name.data,
@@ -40,6 +39,8 @@ def register():
         session.add(guy)
         session.commit()
         login_user(guy, reg_form.remember_me)
+        im = Image.open('static/img/min_logo.png')
+        im.save(f"static/img/avatars/user_{guy.id}.png")
         return redirect("/main_page")
     return render_template("register.html", form=reg_form, title="Регистрация")
 
@@ -126,7 +127,7 @@ def chat(chat_id):
         else:
             user_avatars[member.id] = None
     return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting,
-                           user_avatars=user_avatars)
+                           user_avatars=user_avatars, user=current_user)
 
 
 
@@ -474,6 +475,8 @@ def search_person():
         User.is_deleted == False,
         User.email == query
     ).first()
+    if not user:
+        return redirect('/main_page')
     user_avatars = {}
     avatar_path = f"img/avatars/user_{user.id}.png"
     avatar_full_path = os.path.join(app.root_path, 'static', avatar_path)
