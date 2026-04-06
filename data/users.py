@@ -21,7 +21,7 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     chats = relationship("Chat", secondary="user_chat_association", back_populates="members")
 
     def __repr__(self):
-        return f"<Colonist> {self.id} {self.surname} {self.name}"
+        return f"{self.id} {self.surname} {self.name} {self.email}"
 
     def hash_password(self, password):
         self.hashed_password = md5(password.encode()).hexdigest()

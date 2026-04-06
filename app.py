@@ -39,7 +39,8 @@ def register():
         guy.hash_password(reg_form.password.data)
         session.add(guy)
         session.commit()
-        return redirect("/login")
+        login_user(guy, reg_form.remember_me)
+        return redirect("/main_page")
     return render_template("register.html", form=reg_form, title="Регистрация")
 
 
@@ -58,9 +59,11 @@ def main_page():
     if not user:
         logout_user()
         return redirect("/login")
-    chats = user.chats
+    chats = list(filter(lambda users_chat: users_chat.is_group, user.chats))
+    own_chats = list(filter(lambda users_chat: not users_chat.is_group, user.chats))
     public_chats = session.query(Chat).filter(Chat.is_public == True, ~Chat.members.contains(user)).all()
-    return render_template("main_page.html", title="Мои чаты", chats=chats, public_chats=public_chats)
+    return render_template("main_page.html", title="Мои чаты", chats=chats, own_chats=own_chats,
+                           public_chats=public_chats, user=user)
 
 
 @app.route("/chat/<int:chat_id>", methods=['GET', 'POST'])
@@ -437,6 +440,49 @@ def delete_message(chat_id, message_key):
     with open(filename, "w") as f:
         json.dump(messages, f)
     return redirect(f"/chat/{chat_id}")
+
+
+@app.route("/search_person", methods=['GET', 'POST'])
+@login_required
+def search_person():
+    session = db_session.create_session()
+    if request.method == 'POST':
+        user_id, surname, name, email = request.form.get('user').split()
+        chatting = Chat(title=f"{current_user.name} {current_user.surname}, {current_user.email}; "
+                              f"{name} {surname}, {email}",
+                        creator_id=current_user.id,
+                        is_public=False,
+                        is_group=False)
+        user = session.query(User).filter(User.id == user_id).first()
+        own_chats = session.query(Chat).filter(Chat.is_group == False,
+                                               Chat.is_deleted == False,
+                                               Chat.members.contains(current_user),
+                                               Chat.members.contains(user)).first()
+        if own_chats:
+            return redirect("/main_page")
+        chatting.members.append(user)
+        chatting.members.append(current_user)
+        session.add(chatting)
+        session.commit()
+        with open(f"chats_jsons/chat_{chatting.id}.json", "w") as chat_json:
+            json.dump({}, chat_json)
+        chatting.json_url = f"chat_{chatting.id}"
+        session.commit()
+        return redirect("/main_page")
+    query = request.args.get("p").strip()
+    user = session.query(User).filter(
+        User.is_deleted == False,
+        User.email == query
+    ).first()
+    user_avatars = {}
+    avatar_path = f"img/avatars/user_{user.id}.png"
+    avatar_full_path = os.path.join(app.root_path, 'static', avatar_path)
+    if os.path.exists(avatar_full_path):
+        user_avatars[user.id] = url_for('static', filename=avatar_path) + \
+                                        "?t=" + str(os.path.getmtime(avatar_full_path))
+    else:
+        user_avatars[user.id] = None
+    return render_template("search_person.html", user=user, query=query, user_avatars=user_avatars)
 
 
 if __name__ == "__main__":

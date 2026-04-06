@@ -2,28 +2,30 @@
 
 {% block content %}
 <a href="/main_page" class="btn btn-warning mt-3 ms-3">Вернуться на главную</a>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4>{{ title }}</h4>
-    <div>
-        <a href="{{ url_for('chat_members', chat_id=chatting.id) }}"
-           class="btn btn-outline-secondary btn-sm me-2">
-            <i class="bi bi-people"></i> Участники ({{ chatting.members|length }})
-        </a>
-        <a href="{{ url_for('add_user_to_chat', chat_id=chatting.id) }}" class="btn btn-outline-success btn-sm me-2">
-            + Пригласить
-        </a>
-        {% if current_user.id == chatting.creator_id %}
-        <a href="{{ url_for('edit_chat', chat_id=chatting.id) }}" class="btn btn-outline-primary btn-sm me-2">
-            Редактировать
-        </a>
-        {% endif %}
-        <a href="{{ url_for('confirm_leave_chat', chat_id=chatting.id) }}" class="btn btn-outline-danger btn-sm">
-            Выйти
-        </a>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-3 ms-3 me-3">
+    <h4 class="mt-3">{{ title }}</h4>
+    {% if chatting.is_group %}
+        <div>
+            <a href="{{ url_for('chat_members', chat_id=chatting.id) }}"
+               class="btn btn-outline-secondary btn-sm me-2">
+                <i class="bi bi-people"></i> Участники ({{ chatting.members|length }})
+            </a>
+            <a href="{{ url_for('add_user_to_chat', chat_id=chatting.id) }}" class="btn btn-outline-success btn-sm me-2">
+                + Пригласить
+            </a>
+            {% if current_user.id == chatting.creator_id %}
+            <a href="{{ url_for('edit_chat', chat_id=chatting.id) }}" class="btn btn-outline-primary btn-sm me-2">
+                Редактировать
+            </a>
+            {% endif %}
+            <a href="{{ url_for('confirm_leave_chat', chat_id=chatting.id) }}" class="btn btn-outline-danger btn-sm">
+                Выйти
+            </a>
+        </div>
+    {% endif %}
 </div>
 <div id="messages-container"
-     style="max-height: 70vh; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; border-radius: 8px; padding: 10px; background-color: #f8f9fa;">
+     style="max-height: 60vh; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; border-radius: 8px; padding: 10px; background-color: #f8f9fa;">
     {% for key, message in messages.items() %}
     {% set author_id = message["author_id"] %}
     {% set has_avatar = user_avatars.get(author_id) is not none %}
