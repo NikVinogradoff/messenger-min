@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h3>Результаты поиска</h3>
+    <h3 class="ms-3">Результаты поиска</h3>
     {% if user %}
         {% set has_avatar = user_avatars.get(user.id) is not none %}
         <div class="list-group shadow-sm">

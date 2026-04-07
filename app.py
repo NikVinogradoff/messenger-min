@@ -455,12 +455,12 @@ def search_person():
                         is_public=False,
                         is_group=False)
         user = session.query(User).filter(User.id == user_id).first()
-        own_chats = session.query(Chat).filter(Chat.is_group == False,
+        own_chat = session.query(Chat).filter(Chat.is_group == False,
                                                Chat.is_deleted == False,
                                                Chat.members.contains(current_user),
                                                Chat.members.contains(user)).first()
-        if own_chats:
-            return redirect("/main_page")
+        if own_chat:
+            return redirect(f"/chat/{own_chat.id}")
         chatting.members.append(user)
         chatting.members.append(current_user)
         session.add(chatting)
@@ -469,14 +469,14 @@ def search_person():
             json.dump({}, chat_json)
         chatting.json_url = f"chat_{chatting.id}"
         session.commit()
-        return redirect("/main_page")
+        return redirect(f"/chat/{chatting.id}")
     query = request.args.get("p").strip()
     user = session.query(User).filter(
         User.is_deleted == False,
         User.email == query
     ).first()
     if not user:
-        return redirect('/main_page')
+        return render_template("search_person.html", user=None, query=query, user_avatars=None)
     user_avatars = {}
     avatar_path = f"img/avatars/user_{user.id}.png"
     avatar_full_path = os.path.join(app.root_path, 'static', avatar_path)

@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h3>Результаты поиска</h3>
+    <h3 class="ms-3">Результаты поиска</h3>
     {% if query %}
         <p>Найдено публичных чатов по запросу "<strong>{{ query }}</strong>": {{ chats|length }}</p>
     {% endif %}
