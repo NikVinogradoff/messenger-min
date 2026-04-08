@@ -105,6 +105,20 @@
                 <div class="list-group shadow-sm">
                     {% for chat in own_chats %}
                     {% if not chat.is_deleted %}
+                    {% if chat.title == "Избранное" %}
+                    <a href="/chat/{{ chat.id }}" class="list-group-item list-group-item-action d-flex align-items-center position-relative mt-2">
+                        <div class="me-3">
+                            <img src="{{ url_for('static', filename='img/saved_messages_icon.png') }}"
+                                 alt="Аватар чата"
+                                 class="rounded-circle"
+                                 width="48" height="48"
+                                 style="object-fit: cover;">
+                        </div>
+                        <div class="flex-grow-1 mt-2">
+                            <h5 class="mb-2">Избранное</h5>
+                        </div>
+                    </a>
+                    {% else %}
                     {% set title = chat.title.split('; ')[user.id == chat.creator_id] %}
                     <a href="/chat/{{ chat.id }}" class="list-group-item list-group-item-action d-flex align-items-center position-relative mt-2">
                         <div class="me-3">
@@ -124,6 +138,7 @@
                             <small class="text-muted">Email: {{ title.split(', ')[1] }}</small>
                         </div>
                     </a>
+                    {% endif %}
                     {% endif %}
                     {% endfor %}
                 </div>

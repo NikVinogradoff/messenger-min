@@ -1,3 +1,5 @@
+import json
+
 from config import *
 
 
@@ -41,6 +43,20 @@ def register():
         login_user(guy, reg_form.remember_me)
         im = Image.open('static/img/min_logo.png')
         im.save(f"static/img/avatars/user_{guy.id}.png")
+        saved_messages = Chat(
+            title="Избранное",
+            creator_id=guy.id,
+            avatar_url="img/saved_messages_icon.png",
+            is_public=False,
+            is_group=False
+        )
+        session.add(saved_messages)
+        session.commit()
+        saved_messages.json_url = f"chat_{saved_messages.id}"
+        saved_messages.members.append(guy)
+        session.commit()
+        with open(f"chats_jsons/chat_{saved_messages.id}.json", "w") as saved_json:
+            json.dump({}, saved_json)
         return redirect("/main_page")
     return render_template("register.html", form=reg_form, title="Регистрация")
 
@@ -490,4 +506,4 @@ def search_person():
 
 if __name__ == "__main__":
     db_session.global_init("db/messenger_min.db")
-    serve(app, host="127.0.0.1", port=8080)
+    serve(app, host="127.0.0.1", port=8080, threads=32)
