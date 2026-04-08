@@ -90,6 +90,7 @@ def chat(chat_id):
     chatting = session.query(Chat).filter(Chat.id == chat_id).first()
     if not chatting or (not chatting.is_public and current_user not in chatting.members):
         abort(403)
+    can_send = not chatting.is_channel or current_user.id == chatting.creator_id
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r") as json_file:
         messages = json.load(json_file)
@@ -143,7 +144,7 @@ def chat(chat_id):
         else:
             user_avatars[member.id] = None
     return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting,
-                           user_avatars=user_avatars, user=current_user)
+                           user_avatars=user_avatars, user=current_user, can_send=can_send)
 
 
 
@@ -159,7 +160,7 @@ def create_chat():
                                    title="Создать чат")
         session = db_session.create_session()
         user = session.merge(current_user)
-        chat = Chat(title=title, creator_id=user.id, is_public=is_public)
+        chat = Chat(title=title, creator_id=user.id, is_public=is_public, is_channel=False)
         chat.members.append(user)
         if avatar and avatar.filename:
             avatars_dir = os.path.join(app.static_folder, "img", "chat_avatars")
@@ -502,6 +503,64 @@ def search_person():
     else:
         user_avatars[user.id] = None
     return render_template("search_person.html", user=user, query=query, user_avatars=user_avatars)
+
+
+@app.route("/search_channels", methods=["GET"])
+@login_required
+def search_channels():
+    query = request.args.get("q", "").strip()
+    session = db_session.create_session()
+    user = session.merge(current_user)
+
+    # Ищем только публичные каналы по названию
+    channels = session.query(Chat).filter(
+        Chat.is_public == True,
+        Chat.is_deleted == False,
+        Chat.is_channel == True,
+        Chat.title.like(f"%{query}%"),
+        ~Chat.members.contains(user)
+    ).all()
+
+    return render_template("search_channels_results.html", channels=channels, q=query)
+
+
+@app.route("/create_channel", methods=["GET", "POST"])
+@login_required
+def create_channel():
+    if request.method == "POST":
+        title = request.form.get("title")
+        avatar = request.files.get("avatar")
+        is_public = bool(request.form.get("is_public"))
+        if not title:
+            return render_template("create_channel.html", error="Введите название канала",
+                                   title="Создать канал")
+        session = db_session.create_session()
+        user = session.merge(current_user)
+        chat = Chat(title=title, creator_id=user.id, is_public=is_public, is_channel=True)
+        chat.members.append(user)
+        if avatar and avatar.filename:
+            avatars_dir = os.path.join(app.static_folder, "img", "chat_avatars")
+            os.makedirs(avatars_dir, exist_ok=True)
+            filename = f"chat_{chat.id or hash(title)}.png"
+            filepath = os.path.join(avatars_dir, filename)
+            avatar.save(filepath)
+            chat.avatar_url = f"img/chat_avatars/{filename}"
+        session.add(chat)
+        session.commit()
+        if not chat.id:
+            new_filename = f"chat_{chat.id}.png"
+            old_path = os.path.join(avatars_dir, f"chat_{hash(title)}.png")
+            new_path = os.path.join(avatars_dir, new_filename)
+            if os.path.exists(old_path):
+                os.rename(old_path, new_path)
+            chat.avatar_url = f"img/chat_avatars/{new_filename}"
+            session.commit()
+        with open(f"chats_jsons/chat_{chat.id}.json", "w") as chat_json:
+            json.dump({}, chat_json)
+        chat.json_url = f"chat_{chat.id}"
+        session.commit()
+        return redirect("/main_page")
+    return render_template("create_channel.html", title="Создать канал")
 
 
 if __name__ == "__main__":

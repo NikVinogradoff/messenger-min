@@ -16,13 +16,15 @@ class Chat(SqlAlchemyBase, SerializerMixin):
     __tablename__ = 'chats'
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String, nullable=False)
-    creator_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # Кто создал чат
+    creator_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     members = relationship("User", secondary=user_chat_association, back_populates="chats")
+    creator = relationship("User", back_populates="created_chats")
     avatar_url = Column(String, default=None, nullable=True)
     json_url = Column(String, default=None)
     is_deleted = Column(Boolean, default=False)
     is_public = Column(Boolean, default=False)
     is_group = Column(Boolean, default=True)
+    is_channel = Column(Boolean, default=False)
 
     def __repr__(self):
         return f"<Chat> {self.id} '{self.title}'"

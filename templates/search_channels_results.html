@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h5>Поиск публичных каналов</h5>
+        <form action="/search_channels" method="get" class="d-flex">
+            <input type="text" name="q" class="form-control me-2" placeholder="Введите название канала..."
+                   value="{{ q }}">
+            <button type="submit" class="btn btn-outline-info">Найти</button>
+        </form>
+    </div>
+    {% if channels %}
+    <h4 class="mt-4 text-info">Найденные каналы</h4>
+    <div class="list-group mb-4">
+        {% for chat in channels %}
+        <div class="list-group-item d-flex align-items-center">
+            <div class="me-3">
+                {% if chat.avatar_url %}
+                <img src="{{ url_for('static', filename=chat.avatar_url) }}"
+                     alt="Аватар канала" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                {% else %}
+                <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center"
+                     style="width: 48px; height: 48px;">📢</div>
+                {% endif %}
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="mb-0">{{ chat.title }}</h5>
+            </div>
+            <form action="/join_public_chat/{{ chat.id }}" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-outline-info btn-sm">Подписаться</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif q %}
+    <div class="alert alert-info">Каналов с названием "{{ q }}" не найдено.</div>
+    {% endif %}
+    <a href="/main_page" class="btn btn-secondary">Назад</a>
+</div>
+{% endblock %}

@@ -19,6 +19,7 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     is_deleted = Column(Boolean, default=False)
 
     chats = relationship("Chat", secondary="user_chat_association", back_populates="members")
+    created_chats = relationship("Chat", back_populates="creator")
 
     def __repr__(self):
         return f"{self.id} {self.surname} {self.name} {self.email}"
