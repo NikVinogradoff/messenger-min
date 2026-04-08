@@ -563,6 +563,27 @@ def create_channel():
     return render_template("create_channel.html", title="Создать канал")
 
 
+@app.route("/chat/<int:chat_id>/give_creator", methods=["POST"])
+@login_required
+def give_creator(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat:
+        abort(404)
+    if current_user.id != chat.creator_id:
+        abort(403)
+    new_creator_id = request.form.get("user_id", type=int)
+    if not new_creator_id:
+        abort(400)
+    new_creator = session.query(User).filter(User.id == new_creator_id).first()
+    if not new_creator or new_creator not in chat.members:
+        abort(400, description="Пользователь не найден или не состоит в чате.")
+    chat.creator_id = new_creator.id
+    session.commit()
+
+    return redirect(f"/chat/{chat_id}")
+
+
 if __name__ == "__main__":
     db_session.global_init("db/messenger_min.db")
     serve(app, host="127.0.0.1", port=8080, threads=32)

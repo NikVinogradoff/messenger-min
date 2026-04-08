@@ -16,6 +16,12 @@
                 {% endif %}
             </div>
             {% if current_user.id == chat.creator_id and current_user.id != member.id %}
+                <form action="{{ url_for('give_creator', chat_id=chat.id) }}" method="post" style="display: inline;">
+                    <input type="hidden" name="user_id" value="{{ member.id }}">
+                    <button type="submit" class="btn btn-outline-warning btn-sm">
+                        Назначить создателем
+                    </button>
+                </form>
                 <a href="{{ url_for('confirm_remove_user', chat_id=chat.id, user_id=member.id) }}"
                    class="btn btn-sm btn-outline-danger">
                     Выгнать
