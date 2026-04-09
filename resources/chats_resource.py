@@ -1,6 +1,8 @@
 import json
+import os
 
-from flask import jsonify
+from dotenv import load_dotenv
+from flask import jsonify, request
 from flask_login import current_user
 
 from data import db_session
@@ -16,6 +18,9 @@ parser.add_argument('member_ids', type=int, action='append', default=[])
 parser.add_argument('is_public', type=bool, default=False)
 parser.add_argument('is_group', type=bool, default=True)
 
+load_dotenv(".env")
+APIKEY = os.environ["API_KEY"]
+
 
 def abort_if_chat_not_found(chat_id):
     session = db_session.create_session()
@@ -28,6 +33,9 @@ def abort_if_chat_not_found(chat_id):
 
 class ChatsResource(Resource):
     def get(self, chat_id):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         abort_if_chat_not_found(chat_id)
         session = db_session.create_session()
         chat = session.query(Chat).get(chat_id)
@@ -43,6 +51,9 @@ class ChatsResource(Resource):
         })
 
     def delete(self, chat_id):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         abort_if_chat_not_found(chat_id)
         session = db_session.create_session()
         chat = session.query(Chat).get(chat_id)
@@ -53,6 +64,9 @@ class ChatsResource(Resource):
         return jsonify({'success': 'ok'})
 
     def put(self, chat_id):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         abort_if_chat_not_found(chat_id)
         args = parser.parse_args()
         session = db_session.create_session()
@@ -85,6 +99,9 @@ class ChatsResource(Resource):
 
 class ChatsListResource(Resource):
     def get(self):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         session = db_session.create_session()
         chats = session.query(Chat).all()
         return jsonify({
@@ -104,6 +121,9 @@ class ChatsListResource(Resource):
         })
 
     def post(self):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         args = parser.parse_args()
         session = db_session.create_session()
         creator = session.query(User).get(args['creator_id'])

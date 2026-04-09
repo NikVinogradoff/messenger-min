@@ -1,6 +1,36 @@
+import datetime
 import json
+import os
 
-from config import *
+from PIL import Image
+from dotenv import load_dotenv
+from flask import Flask, render_template, request, url_for
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask_restful import Api, abort
+from waitress import serve
+from werkzeug.utils import redirect, secure_filename
+
+from data import db_session
+from data.chats import Chat
+from data.users import User
+from forms.login_form import LoginForm
+from forms.register_form import RegisterForm
+from resources.chats_resource import ChatsResource, ChatsListResource
+from resources.users_resource import UsersResource, UsersListResource
+
+load_dotenv(".env")
+
+app = Flask(__name__)
+api = Api(app)
+api.add_resource(UsersResource, '/api/users/<int:user_id>')  # /api/users/1?apikey=aaa и аналогично
+api.add_resource(UsersListResource, '/api/users/')
+api.add_resource(ChatsResource, '/api/chats/<int:chat_id>')
+api.add_resource(ChatsListResource, '/api/chats/')
+
+app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
+
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 
 @login_manager.user_loader
@@ -35,7 +65,7 @@ def register():
         guy = User(
             surname=reg_form.surname.data,
             name=reg_form.name.data,
-            email=reg_form.email.data,
+            email=reg_form.email.data
         )
         guy.hash_password(reg_form.password.data)
         session.add(guy)
@@ -139,13 +169,12 @@ def chat(chat_id):
         avatar_path = f"img/avatars/user_{member.id}.png"
         avatar_full_path = os.path.join(app.root_path, 'static', avatar_path)
         if os.path.exists(avatar_full_path):
-            user_avatars[member.id] = url_for('static', filename=avatar_path) + \
-                                      "?t=" + str(os.path.getmtime(avatar_full_path))
+            user_avatars[member.id] = (url_for('static', filename=avatar_path) +
+                                       "?t=" + str(os.path.getmtime(avatar_full_path)))
         else:
             user_avatars[member.id] = None
     return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting,
                            user_avatars=user_avatars, user=current_user, can_send=can_send)
-
 
 
 @app.route("/create_chat", methods=["GET", "POST"])
@@ -498,8 +527,8 @@ def search_person():
     avatar_path = f"img/avatars/user_{user.id}.png"
     avatar_full_path = os.path.join(app.root_path, 'static', avatar_path)
     if os.path.exists(avatar_full_path):
-        user_avatars[user.id] = url_for('static', filename=avatar_path) + \
-                                        "?t=" + str(os.path.getmtime(avatar_full_path))
+        user_avatars[user.id] = (url_for('static', filename=avatar_path) +
+                                 "?t=" + str(os.path.getmtime(avatar_full_path)))
     else:
         user_avatars[user.id] = None
     return render_template("search_person.html", user=user, query=query, user_avatars=user_avatars)
