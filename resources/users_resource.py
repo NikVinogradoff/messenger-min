@@ -1,6 +1,8 @@
 from hashlib import md5
+import os
 
-from flask import jsonify
+from dotenv import load_dotenv
+from flask import jsonify, request
 
 from data import db_session
 from flask_restful import abort, Resource, reqparse
@@ -11,6 +13,9 @@ parser.add_argument('surname', required=True, type=str)
 parser.add_argument('name', required=True, type=str)
 parser.add_argument('email', required=True, type=str)
 parser.add_argument('hashed_password', required=True, type=str)
+
+load_dotenv(".env")
+APIKEY = os.environ["API_KEY"]
 
 
 def abort_if_user_not_found(user_id):
@@ -24,6 +29,9 @@ def abort_if_user_not_found(user_id):
 
 class UsersResource(Resource):
     def get(self, user_id):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         abort_if_user_not_found(user_id)
         session = db_session.create_session()
         user = session.query(User).get(user_id)
@@ -32,6 +40,9 @@ class UsersResource(Resource):
         )))
 
     def delete(self, user_id):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         abort_if_user_not_found(user_id)
         session = db_session.create_session()
         users = session.query(User).get(user_id)
@@ -40,6 +51,9 @@ class UsersResource(Resource):
         return jsonify({'success': 'ok'})
 
     def put(self, user_id):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         abort_if_user_not_found(user_id)
         args = parser.parse_args()
         session = db_session.create_session()
@@ -54,6 +68,9 @@ class UsersResource(Resource):
 
 class UsersListResource(Resource):
     def get(self):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         session = db_session.create_session()
         users = session.query(User).all()
         return jsonify({
@@ -63,6 +80,9 @@ class UsersListResource(Resource):
         })
 
     def post(self):
+        apikey = request.args.get("apikey")
+        if apikey != APIKEY:
+            abort(400, message="invalid apikey")
         args = parser.parse_args()
         session = db_session.create_session()
         users = User(
