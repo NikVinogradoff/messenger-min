@@ -106,11 +106,14 @@ def main_page():
     if not user:
         logout_user()
         return redirect("/login")
-    chats = list(filter(lambda users_chat: users_chat.is_group, user.chats))
-    own_chats = list(filter(lambda users_chat: not users_chat.is_group, user.chats))
+    chats = list(filter(lambda users_chat: users_chat.is_group and not users_chat.is_deleted and
+                                           not users_chat.is_channel, user.chats))
+    own_chats = list(filter(lambda users_chat: not users_chat.is_group and not users_chat.is_deleted and
+                                               not users_chat.is_channel, user.chats))
+    channels = list(filter(lambda users_chat: users_chat.is_channel and not users_chat.is_deleted, user.chats))
     public_chats = session.query(Chat).filter(Chat.is_public == True, ~Chat.members.contains(user)).all()
     return render_template("main_page.html", title="Мои чаты", chats=chats, own_chats=own_chats,
-                           public_chats=public_chats, user=user)
+                           public_chats=public_chats, channel_chats=channels, user=user)
 
 
 @app.route("/chat/<int:chat_id>", methods=['GET', 'POST'])
@@ -247,17 +250,17 @@ def profile():
 @login_required
 def confirm_delete(chat_id):
     session = db_session.create_session()
-    chat = session.query(Chat).get(chat_id)
+    chat = session.get(Chat, chat_id)
     if not chat or current_user not in chat.members or chat.creator_id != current_user.id:
         abort(404)
-    return render_template("confirm_delete.html", chat=chat)
+    return render_template("confirm_delete.html", chat=chat, title="Подтверждение удаления")
 
 
 @app.route("/delete_chat/<int:chat_id>", methods=["POST"])
 @login_required
 def delete_chat(chat_id):
     session = db_session.create_session()
-    chat = session.query(Chat).get(chat_id)
+    chat = session.get(Chat, chat_id)
     if not chat or chat.creator_id != current_user.id:
         abort(403)
     chat.is_deleted = True
@@ -289,7 +292,7 @@ def add_user_to_chat(chat_id):
                 chat.members.append(user_to_add)
                 session.commit()
                 return redirect(f"/chat/{chat_id}")
-    return render_template("add_user.html", chat=chat, error=error)
+    return render_template("add_user.html", chat=chat, error=error, title="Добавление пользователя")
 
 
 @app.route("/chat/<int:chat_id>/leave", methods=["POST"])
@@ -317,7 +320,7 @@ def confirm_leave_chat(chat_id):
         abort(404)
     if current_user not in chat.members:
         abort(403)
-    return render_template("confirm_leave_chat.html", chat=chat)
+    return render_template("confirm_leave_chat.html", chat=chat, title="Подтверждение выхода")
 
 
 @app.route("/chat/<int:chat_id>/remove_user/<int:user_id>", methods=["POST"])
@@ -350,7 +353,7 @@ def chat_members(chat_id):
     if current_user not in chat.members:
         abort(403)
 
-    return render_template("chat_members.html", chat=chat)
+    return render_template("chat_members.html", chat=chat, title="Участники чата")
 
 
 @app.route("/join_public_chat/<int:chat_id>", methods=["POST"])
@@ -379,7 +382,8 @@ def confirm_remove_user(chat_id, user_id):
     if current_user.id != chat.creator_id:
         abort(403)
 
-    return render_template("confirm_remove_user.html", chat=chat, user=user_to_remove)
+    return render_template("confirm_remove_user.html", chat=chat, user=user_to_remove,
+                           title="Подтверждение удаления")
 
 
 @app.route("/chat/<int:chat_id>/edit", methods=["GET", "POST"])
@@ -417,7 +421,7 @@ def edit_chat(chat_id):
             session.commit()
             return redirect(f"/chat/{chat_id}")
 
-    return render_template("edit_chat.html", chat=chat, error=error)
+    return render_template("edit_chat.html", chat=chat, error=error, title="Редактирование чата")
 
 
 @app.route("/search_chats", methods=["GET"])
@@ -433,7 +437,7 @@ def search_chats():
         ~Chat.members.contains(user)
     ).all()
 
-    return render_template("search_results.html", chats=chats, query=query)
+    return render_template("search_results.html", chats=chats, query=query, title="Поиск чата")
 
 
 @app.route("/chat/<int:chat_id>/edit/<message_key>", methods=["POST"])
@@ -531,7 +535,8 @@ def search_person():
                                  "?t=" + str(os.path.getmtime(avatar_full_path)))
     else:
         user_avatars[user.id] = None
-    return render_template("search_person.html", user=user, query=query, user_avatars=user_avatars)
+    return render_template("search_person.html", user=user, query=query, user_avatars=user_avatars,
+                           title="Поиск пользователя")
 
 
 @app.route("/search_channels", methods=["GET"])
@@ -550,7 +555,8 @@ def search_channels():
         ~Chat.members.contains(user)
     ).all()
 
-    return render_template("search_channels_results.html", channels=channels, q=query)
+    return render_template("search_channels_results.html", channels=channels, q=query,
+                           title="Поиск канала")
 
 
 @app.route("/create_channel", methods=["GET", "POST"])
