@@ -51,7 +51,7 @@ def login():
             User.email == login_form.email.data
         ).first()
         if user and user.check_password(login_form.password.data):
-            login_user(user, login_form.remember_me)
+            login_user(user, remember=login_form.remember_me.data)
             return redirect("/main_page")
         return render_template("login.html", form=login_form, message="Пользователь не существует")
     return render_template("login.html", form=login_form, title="Авторизация")
@@ -70,7 +70,7 @@ def register():
         guy.hash_password(reg_form.password.data)
         session.add(guy)
         session.commit()
-        login_user(guy, reg_form.remember_me)
+        login_user(guy, remember=reg_form.remember_me.data)
         im = Image.open('static/img/min_logo.png')
         im.save(f"static/img/avatars/user_{guy.id}.png")
         saved_messages = Chat(
@@ -102,10 +102,7 @@ def logout():
 @login_required
 def main_page():
     session = db_session.create_session()
-    user = session.query(User).filter(User.id == current_user.id).first()
-    if not user:
-        logout_user()
-        return redirect("/login")
+    user = session.merge(current_user)
     chats = list(filter(lambda users_chat: users_chat.is_group and not users_chat.is_deleted and
                                            not users_chat.is_channel, user.chats))
     own_chats = list(filter(lambda users_chat: not users_chat.is_group and not users_chat.is_deleted and
@@ -223,10 +220,7 @@ def create_chat():
 @login_required
 def profile():
     session = db_session.create_session()
-    user = session.query(User).filter(User.id == current_user.id).first()
-    if not user:
-        logout_user()
-        return redirect("/login")
+    user = session.merge(current_user)
     avatar_folder = os.path.join(app.root_path, 'static', 'img', 'avatars')
     os.makedirs(avatar_folder, exist_ok=True)
     avatar_url = None
@@ -499,32 +493,31 @@ def search_person():
     session = db_session.create_session()
     if request.method == 'POST':
         user_id, surname, name, email = request.form.get('user').split()
-        chatting = Chat(title=f"{current_user.name} {current_user.surname}, {current_user.email}; "
-                              f"{name} {surname}, {email}",
-                        creator_id=current_user.id,
-                        is_public=False,
-                        is_group=False)
         user = session.query(User).filter(User.id == user_id).first()
-        own_chat = session.query(Chat).filter(Chat.is_group == False,
-                                               Chat.is_deleted == False,
-                                               Chat.members.contains(current_user),
-                                               Chat.members.contains(user)).first()
+        chatting = Chat(
+            title=f"{current_user.name} {current_user.surname}, {current_user.email}; "f"{name} {surname}, {email}",
+            creator_id=current_user.id,
+            is_public=False,
+            is_group=False)
+        own_chat = session.query(Chat).filter(
+            Chat.is_group == False,
+            Chat.is_deleted == False,
+            Chat.members.contains(current_user),
+            Chat.members.contains(user)).first()
         if own_chat:
             return redirect(f"/chat/{own_chat.id}")
-        chatting.members.append(user)
-        chatting.members.append(current_user)
         session.add(chatting)
+        session.flush()
+        chatting.members.append(user)
+        chatting.members.append(session.merge(current_user))
         session.commit()
         with open(f"chats_jsons/chat_{chatting.id}.json", "w") as chat_json:
             json.dump({}, chat_json)
         chatting.json_url = f"chat_{chatting.id}"
         session.commit()
         return redirect(f"/chat/{chatting.id}")
-    query = request.args.get("p").strip()
-    user = session.query(User).filter(
-        User.is_deleted == False,
-        User.email == query
-    ).first()
+    query = request.args.get("p", "").strip()
+    user = session.query(User).filter(User.is_deleted == False, User.email == query).first()
     if not user:
         return render_template("search_person.html", user=None, query=query, user_avatars=None)
     user_avatars = {}
