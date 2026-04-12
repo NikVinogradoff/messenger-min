@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy_serializer import SerializerMixin
 
 from .db_session import SqlAlchemyBase
+from .user_channel_moderators import UserChannelModerator
 
 user_chat_association = Table(
     'user_chat_association',
@@ -25,6 +26,7 @@ class Chat(SqlAlchemyBase, SerializerMixin):
     is_public = Column(Boolean, default=False)
     is_group = Column(Boolean, default=True)
     is_channel = Column(Boolean, default=False)
+    moderators = relationship("User", secondary="user_channel_moderators", back_populates="moderated_chats")
 
     def __repr__(self):
         return f"<Chat> {self.id} '{self.title}'"

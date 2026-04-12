@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy_serializer import SerializerMixin
 
 from .db_session import SqlAlchemyBase
+from .user_channel_moderators import UserChannelModerator
 
 
 class User(SqlAlchemyBase, UserMixin, SerializerMixin):
@@ -17,9 +18,11 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     email = Column(String, unique=True)
     hashed_password = Column(String)
     is_deleted = Column(Boolean, default=False)
+    is_moderator = Column(Boolean, default=False)
 
     chats = relationship("Chat", secondary="user_chat_association", back_populates="members")
     created_chats = relationship("Chat", back_populates="creator")
+    moderated_chats = relationship("Chat", secondary="user_channel_moderators", back_populates="moderators")
 
     def __repr__(self):
         return f"{self.id} {self.surname} {self.name} {self.email}"

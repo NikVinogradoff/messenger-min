@@ -125,7 +125,7 @@ def chat(chat_id):
     with open(f"users_settings/user_{current_user.id}_settings.json") as style_json:
         style_values = json.load(style_json)
         text_size, mess_roundness = style_values["text_size"], style_values["messages_roundness"]
-    can_send = not chatting.is_channel or current_user.id == chatting.creator_id
+    can_send = not chatting.is_channel or current_user.id == chatting.creator_id or current_user.is_moderator
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r") as json_file:
         messages = json.load(json_file)
@@ -638,6 +638,42 @@ def settings():
             json.dump(settings, old_json_file)
         return render_template("settings.html", title="Настройки", text_size=settings['text_size'],
                                messages_roundness=settings['messages_roundness'], dt=dt)
+
+
+@app.route("/chat/<int:chat_id>/make_moderator", methods=["POST"])
+@login_required
+def make_moderator(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat or not chat.is_channel or current_user.id != chat.creator_id:
+        abort(403)
+    user_id = request.form.get("user_id", type=int)
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user or user not in chat.members:
+        abort(400)
+    if user in chat.moderators:
+        return redirect(f"/chat/{chat_id}")
+    chat.moderators.append(user)
+    session.commit()
+    return redirect(f"/chat/{chat_id}")
+
+
+@app.route("/chat/<int:chat_id>/remove_moderator", methods=["POST"])
+@login_required
+def remove_moderator(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat or not chat.is_channel or current_user.id != chat.creator_id:
+        abort(403)
+
+    user_id = request.form.get("user_id", type=int)
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user or user not in chat.moderators:
+        abort(400)
+
+    chat.moderators.remove(user)
+    session.commit()
+    return redirect(f"/chat/{chat_id}")
 
 
 if __name__ == "__main__":
