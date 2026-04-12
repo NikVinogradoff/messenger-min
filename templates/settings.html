@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<a class="btn btn-warning ms-3 mt-3" href="/profile" role="button">Вернуться в профиль</a>
+<div class="container mt-2">
+    <h1 class="text-center mb-4">Настройки</h1>
+    <div class="row">
+        <div class="col-6">
+            <form method="post" action="/settings">
+                <h4 class="text-center mb-3">Оформление сообщений</h4>
+                <label for="range1" class="form-label">Размер текста: </label>
+                <output for="range1" id="rangeValue1" aria-hidden="true"></output><br>
+                <input type="range" class="form-range" min="1" max="20" value="{{ text_size }}"
+                       id="range1" name="text_size"><br>
+
+                <label for="range2" class="form-label mt-4">Углы блоков сообщений: </label>
+                <output for="range2" id="rangeValue2" aria-hidden="true"></output><br>
+                <input type="range" class="form-range" min="0" max="5" value="{{ messages_roundness }}"
+                       id="range2" name="messages_roundness"><br>
+
+                <div class="row mt-5">
+                    <div class="col">
+                        <button class="btn btn-success me-4 ms-2" type="submit">Применить изменения</button>
+                        <button class="btn btn-secondary" type="reset" onclick="location.reload();">Сбросить изменения</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-6">
+            <div class="d-flex align-items-start justify-content-center gap-2 mt-5">
+                <div class="p-2 bg-primary text-white shadow-sm"
+                     style="max-width: 75%; border-radius: {{ messages_roundness * 4 }}px; font-size: {{ text_size * 10 }}%;" id="message">
+                    <div class="fw-bold" id="text1">{{ current_user.name }} {{ current_user.surname }}</div>
+                    <div class="message-content" id="text2">Привет, мир!</div>
+                    <div class="text-end mt-1" id="text3">
+                        <small class="text-white-50 fst-italic">{{ dt }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  const message = document.getElementById('message');
+
+  const rangeInput1 = document.getElementById('range1');
+  const rangeOutput1 = document.getElementById('rangeValue1');
+
+  rangeOutput1.textContent = rangeInput1.value;
+
+  rangeInput1.addEventListener('input', function() {
+    rangeOutput1.textContent = this.value;
+    message.style.fontSize = this.value * 10 + '%';
+  });
+
+  const rangeInput2 = document.getElementById('range2');
+  const rangeOutput2 = document.getElementById('rangeValue2');
+
+  rangeOutput2.textContent = rangeInput2.value;
+
+  rangeInput2.addEventListener('input', function() {
+    rangeOutput2.textContent = this.value;
+    message.style.borderRadius = this.value * 4 + 'px';
+  });
+</script>
+{% endblock %}
+

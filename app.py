@@ -87,6 +87,8 @@ def register():
         session.commit()
         with open(f"chats_jsons/chat_{saved_messages.id}.json", "w") as saved_json:
             json.dump({}, saved_json)
+        with open(f"users_settings/user_{guy.id}_settings.json", "w") as style_json:
+            json.dump({"text_size": 10, "messages_roundness": 2}, style_json)
         return redirect("/main_page")
     return render_template("register.html", form=reg_form, title="Регистрация")
 
@@ -120,6 +122,9 @@ def chat(chat_id):
     chatting = session.query(Chat).filter(Chat.id == chat_id).first()
     if not chatting or (not chatting.is_public and current_user not in chatting.members):
         abort(403)
+    with open(f"users_settings/user_{current_user.id}_settings.json") as style_json:
+        style_values = json.load(style_json)
+        text_size, mess_roundness = style_values["text_size"], style_values["messages_roundness"]
     can_send = not chatting.is_channel or current_user.id == chatting.creator_id
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r") as json_file:
@@ -145,6 +150,7 @@ def chat(chat_id):
                 if not allowed:
                     return render_template("chat.html", title=chatting.title, messages=messages,
                                            chatting=chatting, user_avatars={},
+                                           text_size=text_size, messages_roundness=mess_roundness,
                                            message_error="Разрешены только: PNG, JPG, JPEG, GIF, TXT, MP4")
                 chat_files_dir = os.path.join(app.static_folder, "chat_files", str(chatting.id))
                 os.makedirs(chat_files_dir, exist_ok=True)
@@ -174,7 +180,8 @@ def chat(chat_id):
         else:
             user_avatars[member.id] = None
     return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting,
-                           user_avatars=user_avatars, user=current_user, can_send=can_send)
+                           user_avatars=user_avatars, user=current_user, can_send=can_send,
+                           text_size=text_size, messages_roundness=mess_roundness)
 
 
 @app.route("/create_chat", methods=["GET", "POST"])
@@ -610,6 +617,27 @@ def give_creator(chat_id):
     session.commit()
 
     return redirect(f"/chat/{chat_id}")
+
+
+@app.route("/settings", methods=['GET', 'POST'])
+def settings():
+    filename = f"users_settings/user_{current_user.id}_settings.json"
+    dt = str(datetime.datetime.now())[:-7]
+    if request.method == 'GET':
+        with open(filename, 'r') as json_file:
+            settings = json.load(json_file)
+        return render_template("settings.html", title="Настройки", text_size=settings['text_size'],
+                               messages_roundness=settings['messages_roundness'], dt=dt)
+    elif request.method == 'POST':
+        with open(filename, 'w') as old_json_file:
+            settings = {
+                "is_dark_mode": bool(request.form.get("is_dark_mode")),
+                "text_size": int(request.form.get("text_size")),
+                "messages_roundness": int(request.form.get("messages_roundness"))
+            }
+            json.dump(settings, old_json_file)
+        return render_template("settings.html", title="Настройки", text_size=settings['text_size'],
+                               messages_roundness=settings['messages_roundness'], dt=dt)
 
 
 if __name__ == "__main__":

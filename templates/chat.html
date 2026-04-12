@@ -40,7 +40,8 @@
         <div class="col">
             {% if is_current_user %}
             <div class="d-flex align-items-start justify-content-end gap-2">
-                <div class="p-2 bg-primary text-white rounded-3 shadow-sm" style="max-width: 75%;">
+                <div class="p-2 bg-primary text-white shadow-sm"
+                     style="max-width: 75%; font-size: {{ text_size * 10 }}%; border-radius: {{ messages_roundness * 4 }}px;">
                     <div class="fw-bold">{{ message["author_name"] }}</div>
                     <form method="post" action="{{ url_for('edit_message', chat_id=chatting.id, message_key=key) }}" style="display: none;" id="edit-form-{{ key }}">
                         <textarea name="text" class="form-control mb-1" rows="2" style="font-size: 0.9em;">{{ message["text"] }}</textarea>
@@ -102,7 +103,8 @@
                     </div>
                     {% endif %}
                 </div>
-                <div class="p-2 bg-light rounded-3 shadow-sm" style="max-width: 75%;">
+                <div class="p-2 bg-light rounded-{{ messages_roundness }} shadow-sm"
+                     style="max-width: 75%; font-size: {{ text_size * 10 }}%; border-radius: {{ messages_roundness * 4 }}px;">
                     <div class="fw-bold text-primary">{{ message["author_name"] }}</div>
                     <div class="message-content">
                         {{ message["text"].replace('\n', '<br>') | safe }}
