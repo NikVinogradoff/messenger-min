@@ -7,12 +7,14 @@
         <a href="{{ url_for('chat', chat_id=chat.id) }}" class="btn btn-secondary btn-sm">Назад в чат</a>
     </div>
     <ul class="list-group list-group-flush shadow-sm">
-        {% for member in chat.members %}
+    {% for member in chat.members %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <div>
                 {{ member.name }} {{ member.surname }}
                 {% if member.id == chat.creator_id %}
                     <small class="text-muted">(создатель)</small>
+                {% elif member in chat.moderators %}
+                    <small class="text-muted">(модератор)</small>
                 {% endif %}
             </div>
             {% if current_user.id == chat.creator_id and current_user.id != member.id %}
@@ -22,6 +24,19 @@
                         Назначить создателем
                     </button>
                 </form>
+                {% if current_user.id == chat.creator_id and member.id != current_user.id and chat.is_channel %}
+                    {% if member in chat.moderators %}
+                        <form action="{{ url_for('remove_moderator', chat_id=chat.id) }}" method="post" style="display: inline;">
+                            <input type="hidden" name="user_id" value="{{ member.id }}">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">Снять модератора</button>
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('make_moderator', chat_id=chat.id) }}" method="post" style="display: inline;">
+                            <input type="hidden" name="user_id" value="{{ member.id }}">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">Назначить модератором</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
                 <a href="{{ url_for('confirm_remove_user', chat_id=chat.id, user_id=member.id) }}"
                    class="btn btn-sm btn-outline-danger">
                     Выгнать

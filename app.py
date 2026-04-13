@@ -47,9 +47,11 @@ def login():
     login_form = LoginForm()
     if login_form.validate_on_submit():
         session = db_session.create_session()
-        user = session.query(User).filter(User.email == login_form.email.data).first()
+        user = session.query(User).filter(
+            User.email == login_form.email.data
+        ).first()
         if user and user.check_password(login_form.password.data):
-            login_user(user, login_form.remember_me)
+            login_user(user, remember=login_form.remember_me.data)
             return redirect("/main_page")
         return render_template("login.html", form=login_form, message="Пользователь не существует")
     return render_template("login.html", form=login_form, title="Авторизация")
@@ -60,15 +62,24 @@ def register():
     reg_form = RegisterForm()
     if reg_form.validate_on_submit():
         session = db_session.create_session()
-        guy = User(surname=reg_form.surname.data, name=reg_form.name.data, email=reg_form.email.data, )
+        guy = User(
+            surname=reg_form.surname.data,
+            name=reg_form.name.data,
+            email=reg_form.email.data
+        )
         guy.hash_password(reg_form.password.data)
         session.add(guy)
         session.commit()
-        login_user(guy, reg_form.remember_me)
+        login_user(guy, remember=reg_form.remember_me.data)
         im = Image.open('static/img/min_logo.png')
         im.save(f"static/img/avatars/user_{guy.id}.png")
-        saved_messages = Chat(title="Избранное", creator_id=guy.id, avatar_url="img/saved_messages_icon.png",
-            is_public=False, is_group=False)
+        saved_messages = Chat(
+            title="Избранное",
+            creator_id=guy.id,
+            avatar_url="img/saved_messages_icon.png",
+            is_public=False,
+            is_group=False
+        )
         session.add(saved_messages)
         session.commit()
         saved_messages.json_url = f"chat_{saved_messages.id}"
@@ -76,6 +87,8 @@ def register():
         session.commit()
         with open(f"chats_jsons/chat_{saved_messages.id}.json", "w") as saved_json:
             json.dump({}, saved_json)
+        with open(f"users_settings/user_{guy.id}_settings.json", "w") as style_json:
+            json.dump({"text_size": 10, "messages_roundness": 2}, style_json)
         return redirect("/main_page")
     return render_template("register.html", form=reg_form, title="Регистрация")
 
@@ -91,15 +104,15 @@ def logout():
 @login_required
 def main_page():
     session = db_session.create_session()
-    user = session.query(User).filter(User.id == current_user.id).first()
-    if not user:
-        logout_user()
-        return redirect("/login")
-    chats = list(filter(lambda users_chat: users_chat.is_group, user.chats))
-    own_chats = list(filter(lambda users_chat: not users_chat.is_group, user.chats))
+    user = session.merge(current_user)
+    chats = list(filter(lambda users_chat: users_chat.is_group and not users_chat.is_deleted and
+                                           not users_chat.is_channel, user.chats))
+    own_chats = list(filter(lambda users_chat: not users_chat.is_group and not users_chat.is_deleted and
+                                               not users_chat.is_channel, user.chats))
+    channels = list(filter(lambda users_chat: users_chat.is_channel and not users_chat.is_deleted, user.chats))
     public_chats = session.query(Chat).filter(Chat.is_public == True, ~Chat.members.contains(user)).all()
     return render_template("main_page.html", title="Мои чаты", chats=chats, own_chats=own_chats,
-                           public_chats=public_chats, user=user)
+                           public_chats=public_chats, channel_chats=channels, user=user)
 
 
 @app.route("/chat/<int:chat_id>", methods=['GET', 'POST'])
@@ -109,7 +122,10 @@ def chat(chat_id):
     chatting = session.query(Chat).filter(Chat.id == chat_id).first()
     if not chatting or (not chatting.is_public and current_user not in chatting.members):
         abort(403)
-    can_send = not chatting.is_channel or current_user.id == chatting.creator_id
+    with open(f"users_settings/user_{current_user.id}_settings.json") as style_json:
+        style_values = json.load(style_json)
+        text_size, mess_roundness = style_values["text_size"], style_values["messages_roundness"]
+    can_send = not chatting.is_channel or current_user.id == chatting.creator_id or current_user.is_moderator
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r") as json_file:
         messages = json.load(json_file)
@@ -132,8 +148,9 @@ def chat(chat_id):
             if file and file.filename != '':
                 allowed = file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.txt', '.mp4'))
                 if not allowed:
-                    return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting,
-                                           user_avatars={},
+                    return render_template("chat.html", title=chatting.title, messages=messages,
+                                           chatting=chatting, user_avatars={},
+                                           text_size=text_size, messages_roundness=mess_roundness,
                                            message_error="Разрешены только: PNG, JPG, JPEG, GIF, TXT, MP4")
                 chat_files_dir = os.path.join(app.static_folder, "chat_files", str(chatting.id))
                 os.makedirs(chat_files_dir, exist_ok=True)
@@ -143,9 +160,14 @@ def chat(chat_id):
                 file_url = url_for('static', filename=f"chat_files/{chatting.id}/{safe_filename}")
         with open(filename, "w") as old_json:
             message_key = f'message_{len(messages.keys()) + 1}'
-            messages[message_key] = {"author_id": current_user.id,
-                "author_name": f"{current_user.name} {current_user.surname}", "text": formatted_text,
-                "datetime": str(datetime.datetime.now())[:-7], "file_url": file_url, "filename": safe_filename}
+            messages[message_key] = {
+                "author_id": current_user.id,
+                "author_name": f"{current_user.name} {current_user.surname}",
+                "text": formatted_text,
+                "datetime": str(datetime.datetime.now())[:-7],
+                "file_url": file_url,
+                "filename": safe_filename
+            }
             json.dump(messages, old_json)
         return redirect(f"/chat/{chat_id}")
     user_avatars = {}
@@ -153,12 +175,13 @@ def chat(chat_id):
         avatar_path = f"img/avatars/user_{member.id}.png"
         avatar_full_path = os.path.join(app.root_path, 'static', avatar_path)
         if os.path.exists(avatar_full_path):
-            user_avatars[member.id] = url_for('static', filename=avatar_path) + "?t=" + str(
-                os.path.getmtime(avatar_full_path))
+            user_avatars[member.id] = (url_for('static', filename=avatar_path) +
+                                       "?t=" + str(os.path.getmtime(avatar_full_path)))
         else:
             user_avatars[member.id] = None
     return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting,
-                           user_avatars=user_avatars, user=current_user, can_send=can_send)
+                           user_avatars=user_avatars, user=current_user, can_send=can_send,
+                           text_size=text_size, messages_roundness=mess_roundness)
 
 
 @app.route("/create_chat", methods=["GET", "POST"])
@@ -169,7 +192,8 @@ def create_chat():
         avatar = request.files.get("avatar")
         is_public = bool(request.form.get("is_public"))
         if not title:
-            return render_template("create_chat.html", error="Введите название чата", title="Создать чат")
+            return render_template("create_chat.html", error="Введите название чата",
+                                   title="Создать чат")
         session = db_session.create_session()
         user = session.merge(current_user)
         chat = Chat(title=title, creator_id=user.id, is_public=is_public, is_channel=False)
@@ -203,10 +227,7 @@ def create_chat():
 @login_required
 def profile():
     session = db_session.create_session()
-    user = session.query(User).filter(User.id == current_user.id).first()
-    if not user:
-        logout_user()
-        return redirect("/login")
+    user = session.merge(current_user)
     avatar_folder = os.path.join(app.root_path, 'static', 'img', 'avatars')
     os.makedirs(avatar_folder, exist_ok=True)
     avatar_url = None
@@ -230,17 +251,17 @@ def profile():
 @login_required
 def confirm_delete(chat_id):
     session = db_session.create_session()
-    chat = session.query(Chat).get(chat_id)
+    chat = session.get(Chat, chat_id)
     if not chat or current_user not in chat.members or chat.creator_id != current_user.id:
         abort(404)
-    return render_template("confirm_delete.html", chat=chat)
+    return render_template("confirm_delete.html", chat=chat, title="Подтверждение удаления")
 
 
 @app.route("/delete_chat/<int:chat_id>", methods=["POST"])
 @login_required
 def delete_chat(chat_id):
     session = db_session.create_session()
-    chat = session.query(Chat).get(chat_id)
+    chat = session.get(Chat, chat_id)
     if not chat or chat.creator_id != current_user.id:
         abort(403)
     chat.is_deleted = True
@@ -272,7 +293,7 @@ def add_user_to_chat(chat_id):
                 chat.members.append(user_to_add)
                 session.commit()
                 return redirect(f"/chat/{chat_id}")
-    return render_template("add_user.html", chat=chat, error=error)
+    return render_template("add_user.html", chat=chat, error=error, title="Добавление пользователя")
 
 
 @app.route("/chat/<int:chat_id>/leave", methods=["POST"])
@@ -300,7 +321,7 @@ def confirm_leave_chat(chat_id):
         abort(404)
     if current_user not in chat.members:
         abort(403)
-    return render_template("confirm_leave_chat.html", chat=chat)
+    return render_template("confirm_leave_chat.html", chat=chat, title="Подтверждение выхода")
 
 
 @app.route("/chat/<int:chat_id>/remove_user/<int:user_id>", methods=["POST"])
@@ -333,7 +354,7 @@ def chat_members(chat_id):
     if current_user not in chat.members:
         abort(403)
 
-    return render_template("chat_members.html", chat=chat)
+    return render_template("chat_members.html", chat=chat, title="Участники чата")
 
 
 @app.route("/join_public_chat/<int:chat_id>", methods=["POST"])
@@ -362,7 +383,8 @@ def confirm_remove_user(chat_id, user_id):
     if current_user.id != chat.creator_id:
         abort(403)
 
-    return render_template("confirm_remove_user.html", chat=chat, user=user_to_remove)
+    return render_template("confirm_remove_user.html", chat=chat, user=user_to_remove,
+                           title="Подтверждение удаления")
 
 
 @app.route("/chat/<int:chat_id>/edit", methods=["GET", "POST"])
@@ -400,7 +422,7 @@ def edit_chat(chat_id):
             session.commit()
             return redirect(f"/chat/{chat_id}")
 
-    return render_template("edit_chat.html", chat=chat, error=error)
+    return render_template("edit_chat.html", chat=chat, error=error, title="Редактирование чата")
 
 
 @app.route("/search_chats", methods=["GET"])
@@ -409,10 +431,14 @@ def search_chats():
     query = request.args.get("q", "").strip()
     session = db_session.create_session()
     user = session.merge(current_user)
-    chats = session.query(Chat).filter(Chat.is_public == True, Chat.is_deleted == False, Chat.title.ilike(f"%{query}%"),
-        ~Chat.members.contains(user)).all()
+    chats = session.query(Chat).filter(
+        Chat.is_public == True,
+        Chat.is_deleted == False,
+        Chat.title.ilike(f"%{query}%"),
+        ~Chat.members.contains(user)
+    ).all()
 
-    return render_template("search_results.html", chats=chats, query=query)
+    return render_template("search_results.html", chats=chats, query=query, title="Поиск чата")
 
 
 @app.route("/chat/<int:chat_id>/edit/<message_key>", methods=["POST"])
@@ -474,23 +500,30 @@ def search_person():
     session = db_session.create_session()
     if request.method == 'POST':
         user_id, surname, name, email = request.form.get('user').split()
-        chatting = Chat(title=f"{current_user.name} {current_user.surname}, {current_user.email}; "
-                              f"{name} {surname}, {email}", creator_id=current_user.id, is_public=False, is_group=False)
         user = session.query(User).filter(User.id == user_id).first()
-        own_chat = session.query(Chat).filter(Chat.is_group == False, Chat.is_deleted == False,
-                                              Chat.members.contains(current_user), Chat.members.contains(user)).first()
+        chatting = Chat(
+            title=f"{current_user.name} {current_user.surname}, {current_user.email}; "f"{name} {surname}, {email}",
+            creator_id=current_user.id,
+            is_public=False,
+            is_group=False)
+        own_chat = session.query(Chat).filter(
+            Chat.is_group == False,
+            Chat.is_deleted == False,
+            Chat.members.contains(current_user),
+            Chat.members.contains(user)).first()
         if own_chat:
             return redirect(f"/chat/{own_chat.id}")
-        chatting.members.append(user)
-        chatting.members.append(current_user)
         session.add(chatting)
+        session.flush()
+        chatting.members.append(user)
+        chatting.members.append(session.merge(current_user))
         session.commit()
         with open(f"chats_jsons/chat_{chatting.id}.json", "w") as chat_json:
             json.dump({}, chat_json)
         chatting.json_url = f"chat_{chatting.id}"
         session.commit()
         return redirect(f"/chat/{chatting.id}")
-    query = request.args.get("p").strip()
+    query = request.args.get("p", "").strip()
     user = session.query(User).filter(User.is_deleted == False, User.email == query).first()
     if not user:
         return render_template("search_person.html", user=None, query=query, user_avatars=None)
@@ -498,11 +531,12 @@ def search_person():
     avatar_path = f"img/avatars/user_{user.id}.png"
     avatar_full_path = os.path.join(app.root_path, 'static', avatar_path)
     if os.path.exists(avatar_full_path):
-        user_avatars[user.id] = url_for('static', filename=avatar_path) + "?t=" + str(
-            os.path.getmtime(avatar_full_path))
+        user_avatars[user.id] = (url_for('static', filename=avatar_path) +
+                                 "?t=" + str(os.path.getmtime(avatar_full_path)))
     else:
         user_avatars[user.id] = None
-    return render_template("search_person.html", user=user, query=query, user_avatars=user_avatars)
+    return render_template("search_person.html", user=user, query=query, user_avatars=user_avatars,
+                           title="Поиск пользователя")
 
 
 @app.route("/search_channels", methods=["GET"])
@@ -513,10 +547,16 @@ def search_channels():
     user = session.merge(current_user)
 
     # Ищем только публичные каналы по названию
-    channels = session.query(Chat).filter(Chat.is_public == True, Chat.is_deleted == False, Chat.is_channel == True,
-        Chat.title.like(f"%{query}%"), ~Chat.members.contains(user)).all()
+    channels = session.query(Chat).filter(
+        Chat.is_public == True,
+        Chat.is_deleted == False,
+        Chat.is_channel == True,
+        Chat.title.like(f"%{query}%"),
+        ~Chat.members.contains(user)
+    ).all()
 
-    return render_template("search_channels_results.html", channels=channels, q=query)
+    return render_template("search_channels_results.html", channels=channels, q=query,
+                           title="Поиск канала")
 
 
 @app.route("/create_channel", methods=["GET", "POST"])
@@ -527,7 +567,8 @@ def create_channel():
         avatar = request.files.get("avatar")
         is_public = bool(request.form.get("is_public"))
         if not title:
-            return render_template("create_channel.html", error="Введите название канала", title="Создать канал")
+            return render_template("create_channel.html", error="Введите название канала",
+                                   title="Создать канал")
         session = db_session.create_session()
         user = session.merge(current_user)
         chat = Chat(title=title, creator_id=user.id, is_public=is_public, is_channel=True)
@@ -575,6 +616,63 @@ def give_creator(chat_id):
     chat.creator_id = new_creator.id
     session.commit()
 
+    return redirect(f"/chat/{chat_id}")
+
+
+@app.route("/settings", methods=['GET', 'POST'])
+def settings():
+    filename = f"users_settings/user_{current_user.id}_settings.json"
+    dt = str(datetime.datetime.now())[:-7]
+    if request.method == 'GET':
+        with open(filename, 'r') as json_file:
+            settings = json.load(json_file)
+        return render_template("settings.html", title="Настройки", text_size=settings['text_size'],
+                               messages_roundness=settings['messages_roundness'], dt=dt)
+    elif request.method == 'POST':
+        with open(filename, 'w') as old_json_file:
+            settings = {
+                "is_dark_mode": bool(request.form.get("is_dark_mode")),
+                "text_size": int(request.form.get("text_size")),
+                "messages_roundness": int(request.form.get("messages_roundness"))
+            }
+            json.dump(settings, old_json_file)
+        return render_template("settings.html", title="Настройки", text_size=settings['text_size'],
+                               messages_roundness=settings['messages_roundness'], dt=dt)
+
+
+@app.route("/chat/<int:chat_id>/make_moderator", methods=["POST"])
+@login_required
+def make_moderator(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat or not chat.is_channel or current_user.id != chat.creator_id:
+        abort(403)
+    user_id = request.form.get("user_id", type=int)
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user or user not in chat.members:
+        abort(400)
+    if user in chat.moderators:
+        return redirect(f"/chat/{chat_id}")
+    chat.moderators.append(user)
+    session.commit()
+    return redirect(f"/chat/{chat_id}")
+
+
+@app.route("/chat/<int:chat_id>/remove_moderator", methods=["POST"])
+@login_required
+def remove_moderator(chat_id):
+    session = db_session.create_session()
+    chat = session.query(Chat).filter(Chat.id == chat_id).first()
+    if not chat or not chat.is_channel or current_user.id != chat.creator_id:
+        abort(403)
+
+    user_id = request.form.get("user_id", type=int)
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user or user not in chat.moderators:
+        abort(400)
+
+    chat.moderators.remove(user)
+    session.commit()
     return redirect(f"/chat/{chat_id}")
 
 
