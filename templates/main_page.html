@@ -16,9 +16,11 @@
                     <a href="/chat/{{ chat.id }}" class="list-group-item list-group-item-action d-flex align-items-center position-relative mt-2">
                         <div class="me-3">
                             {% if chat.avatar_url %}
-                                <img src="{{ url_for('static', filename=chat.avatar_url) }}" alt="Аватар чата" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                                <img src="{{ url_for('static', filename=chat.avatar_url) }}" alt="Аватар чата" width="48" height="48"
+                                     style="object-fit: cover; border-radius: {{ avatars_roundness * 10 }}%;">
                             {% else %}
-                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">{{ chat.title[0] }}</div>
+                                <div class="bg-primary text-white d-flex align-items-center justify-content-center"
+                                     style="width: 48px; height: 48px; border-radius: {{ avatars_roundness * 10 }}%;">{{ chat.title[0] }}</div>
                             {% endif %}
                         </div>
                         <div class="flex-grow-1">
@@ -55,9 +57,9 @@
                     <a href="/chat/{{ chat.id }}" class="list-group-item list-group-item-action d-flex align-items-center position-relative mt-2">
                         <div class="me-3">
                             {% if chat.avatar_url %}
-                                <img src="{{ url_for('static', filename=chat.avatar_url) }}" alt="Аватар канала" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                                <img src="{{ url_for('static', filename=chat.avatar_url) }}" alt="Аватар канала" width="48" height="48" style="object-fit: cover; border-radius: {{ avatars_roundness * 10 }}%;">
                             {% else %}
-                                <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">📢</div>
+                                <div class="bg-info text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: {{ avatars_roundness * 10 }}%;">📢</div>
                             {% endif %}
                         </div>
                         <div class="flex-grow-1">
@@ -92,7 +94,8 @@
                 {% if chat.title == "Избранное" %}
                 <a href="/chat/{{ chat.id }}" class="list-group-item list-group-item-action d-flex align-items-center position-relative mt-2">
                     <div class="me-3">
-                        <img src="{{ url_for('static', filename='img/saved_messages_icon.png') }}" alt="Аватар чата" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                        <img src="{{ url_for('static', filename='img/saved_messages_icon.png') }}" alt="Аватар чата"
+                             class="rounded-circle" width="48" height="48" style="object-fit: cover;">
                     </div>
                     <div class="flex-grow-1 mt-2">
                         <h5 class="mb-2">Избранное</h5>
@@ -105,7 +108,7 @@
                         {% for member in chat.members %}
                         {% if member.id != user.id %}
                         {% set filename = 'img/avatars/user_%s.png' | format(member.id) %}
-                        <img src="{{ url_for('static', filename=filename) }}" alt="Аватар чата" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                        <img src="{{ url_for('static', filename=filename) }}" alt="Аватар чата" width="48" height="48" style="object-fit: cover; border-radius: {{ avatars_roundness * 10 }}%;">
                         {% endif %}
                         {% endfor %}
                     </div>

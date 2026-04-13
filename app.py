@@ -111,8 +111,11 @@ def main_page():
                                                not users_chat.is_channel, user.chats))
     channels = list(filter(lambda users_chat: users_chat.is_channel and not users_chat.is_deleted, user.chats))
     public_chats = session.query(Chat).filter(Chat.is_public == True, ~Chat.members.contains(user)).all()
+    with open(f'users_settings/user_{user.id}_settings.json', 'r') as settings_json:
+        avatars_roundness = int(json.load(settings_json)["avatars_roundness"])
     return render_template("main_page.html", title="Мои чаты", chats=chats, own_chats=own_chats,
-                           public_chats=public_chats, channel_chats=channels, user=user)
+                           public_chats=public_chats, channel_chats=channels, user=user,
+                           avatars_roundness=avatars_roundness)
 
 
 @app.route("/chat/<int:chat_id>", methods=['GET', 'POST'])
@@ -124,7 +127,9 @@ def chat(chat_id):
         abort(403)
     with open(f"users_settings/user_{current_user.id}_settings.json") as style_json:
         style_values = json.load(style_json)
-        text_size, mess_roundness = style_values["text_size"], style_values["messages_roundness"]
+        text_size = style_values["text_size"]
+        mess_roundness = style_values["messages_roundness"]
+        avatars_roundness = style_values["avatars_roundness"]
     can_send = not chatting.is_channel or current_user.id == chatting.creator_id or current_user.is_moderator
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r") as json_file:
@@ -181,7 +186,7 @@ def chat(chat_id):
             user_avatars[member.id] = None
     return render_template("chat.html", title=chatting.title, messages=messages, chatting=chatting,
                            user_avatars=user_avatars, user=current_user, can_send=can_send,
-                           text_size=text_size, messages_roundness=mess_roundness)
+                           text_size=text_size, messages_roundness=mess_roundness, avatars_roundness=avatars_roundness)
 
 
 @app.route("/create_chat", methods=["GET", "POST"])
@@ -242,9 +247,12 @@ def profile():
                 file.save(os.path.join(avatar_folder, filename))
     avatar_path = f"img/avatars/user_{user.id}.png"
     avatar_full_path = os.path.join(app.root_path, 'static', avatar_path)
+    with open(f'users_settings/user_{user.id}_settings.json', 'r') as settings_json:
+        avatars_roundness = int(json.load(settings_json)["avatars_roundness"])
     if os.path.exists(avatar_full_path):
         avatar_url = url_for('static', filename=avatar_path) + "?t=" + str(os.path.getmtime(avatar_full_path))
-    return render_template("profile.html", title="Профиль", current_user=user, avatar_url=avatar_url)
+    return render_template("profile.html", title="Профиль", current_user=user, avatar_url=avatar_url,
+                           avatars_roundness=avatars_roundness)
 
 
 @app.route("/confirm_delete/<int:chat_id>")
@@ -627,17 +635,20 @@ def settings():
         with open(filename, 'r') as json_file:
             settings = json.load(json_file)
         return render_template("settings.html", title="Настройки", text_size=settings['text_size'],
-                               messages_roundness=settings['messages_roundness'], dt=dt)
+                               messages_roundness=settings['messages_roundness'],
+                               avatars_roundness=settings["avatars_roundness"], dt=dt)
     elif request.method == 'POST':
         with open(filename, 'w') as old_json_file:
             settings = {
-                "is_dark_mode": bool(request.form.get("is_dark_mode")),
                 "text_size": int(request.form.get("text_size")),
-                "messages_roundness": int(request.form.get("messages_roundness"))
+                "messages_roundness": int(request.form.get("messages_roundness")),
+                "avatars_roundness": int(request.form.get("avatars_roundness"))
             }
+            print(request.form.get("avatars_roundness"))
             json.dump(settings, old_json_file)
         return render_template("settings.html", title="Настройки", text_size=settings['text_size'],
-                               messages_roundness=settings['messages_roundness'], dt=dt)
+                               messages_roundness=settings['messages_roundness'],
+                               avatars_roundness=settings["avatars_roundness"], dt=dt)
 
 
 @app.route("/chat/<int:chat_id>/make_moderator", methods=["POST"])

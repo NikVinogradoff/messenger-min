@@ -81,10 +81,10 @@
                 <div style="width: 32px; height: 32px;">
                     {% if has_avatar %}
                     <img src="{{ user_avatars[author_id] }}" alt="Аватар"
-                         class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">
+                         style="width: 100%; height: 100%; object-fit: cover; border-radius: {{ avatars_roundness * 10 }}%;">
                     {% else %}
-                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded-circle"
-                         style="width: 100%; height: 100%; font-size: 12px;">
+                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center"
+                         style="width: 100%; height: 100%; font-size: 12px; border-radius: {{ avatars_roundness * 10 }}%;">
                         {{ message["author_name"].split()[0][0].upper() }}
                     </div>
                     {% endif %}
@@ -95,10 +95,10 @@
                 <div style="width: 32px; height: 32px;">
                     {% if has_avatar %}
                     <img src="{{ user_avatars[author_id] }}" alt="Аватар"
-                         class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">
+                         style="width: 100%; height: 100%; object-fit: cover; border-radius: {{ avatars_roundness * 10 }}%;">
                     {% else %}
-                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded-circle"
-                         style="width: 100%; height: 100%; font-size: 12px;">
+                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center"
+                         style="width: 100%; height: 100%; font-size: 12px; border-radius: {{ avatars_roundness * 10 }}%;">
                         {{ message["author_name"].split()[0][0].upper() }}
                     </div>
                     {% endif %}
