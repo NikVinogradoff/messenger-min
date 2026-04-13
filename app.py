@@ -88,7 +88,7 @@ def register():
         with open(f"chats_jsons/chat_{saved_messages.id}.json", "w") as saved_json:
             json.dump({}, saved_json)
         with open(f"users_settings/user_{guy.id}_settings.json", "w") as style_json:
-            json.dump({"text_size": 10, "messages_roundness": 2}, style_json)
+            json.dump({"text_size": 10, "messages_roundness": 2, "avatars_roundness": 5}, style_json)
         return redirect("/main_page")
     return render_template("register.html", form=reg_form, title="Регистрация")
 
