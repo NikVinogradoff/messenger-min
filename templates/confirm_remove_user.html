@@ -8,10 +8,10 @@
             <p class="card-text">
                 Вы действительно хотите выгнать пользователя <strong>{{ user.name }} {{ user.surname }}</strong> из чата "<strong>{{ chat.title }}</strong>"?
             </p>
-            <form action="{{ url_for('remove_user_from_chat', chat_id=chat.id, user_id=user.id) }}" method="post" class="d-inline">
+            <form action="/chat/{{ chat.id }}/remove_user/{{ user.id }}" method="post" class="d-inline">
                 <button type="submit" class="btn btn-danger me-2">Да, выгнать</button>
             </form>
-            <a href="{{ url_for('chat_members', chat_id=chat.id) }}" class="btn btn-secondary">Отмена</a>
+            <a href="/chat/{{ chat.id }}/members" class="btn btn-secondary">Отмена</a>
         </div>
     </div>
 </div>

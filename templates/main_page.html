@@ -3,7 +3,7 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-4">
-            <form action="/search_chats" method="get" class="mb-4">
+            <form action="/chat/search_chats" method="get" class="mb-4">
                 <div class="input-group">
                     <input type="text" name="q" class="form-control" placeholder="Искать публичные чаты..." value="{{ request.args.get('q', '') }}">
                     <button class="btn btn-outline-primary" type="submit">Поиск</button>
@@ -31,7 +31,7 @@
                             {% if chat.is_public %}<i class="bi bi-eye" title="Публичный чат"></i>{% else %}<i class="bi bi-eye-slash" title="Приватный чат"></i>{% endif %}
                         </div>
                         {% if current_user.id == chat.creator_id %}
-                            <a href="/confirm_delete/{{ chat.id }}" class="btn btn-outline-danger btn-sm" style="z-index: 2;">Удалить</a>
+                            <a href="/chat/confirm_delete/{{ chat.id }}" class="btn btn-outline-danger btn-sm" style="z-index: 2;">Удалить</a>
                         {% endif %}
                     </a>
                 {% endfor %}
@@ -40,11 +40,11 @@
                 <div class="text-center text-muted"><p>Нет групповых чатов.</p></div>
             {% endif %}
             <div class="text-center mt-3">
-                <a href="/create_chat" class="btn btn-primary btn-sm">Создать чат</a>
+                <a href="/chat/create_chat" class="btn btn-primary btn-sm">Создать чат</a>
             </div>
         </div>
         <div class="col-4">
-            <form action="/search_channels" method="get" class="mb-4">
+            <form action="/channel/search_channels" method="get" class="mb-4">
                 <div class="input-group">
                     <input type="text" name="q" class="form-control" placeholder="Искать публичные каналы..." value="{{ request.args.get('q', '') }}">
                     <button class="btn btn-outline-info" type="submit">Найти</button>
@@ -69,7 +69,7 @@
                             {% if chat.is_public %}<i class="bi bi-eye" title="Публичный канал"></i>{% else %}<i class="bi bi-eye-slash" title="Приватный канал"></i>{% endif %}
                         </div>
                         {% if current_user.id == chat.creator_id %}
-                            <a href="/confirm_delete/{{ chat.id }}" class="btn btn-outline-danger btn-sm" style="z-index: 2;">Удалить</a>
+                            <a href="/chat/confirm_delete/{{ chat.id }}" class="btn btn-outline-danger btn-sm" style="z-index: 2;">Удалить</a>
                         {% endif %}
                     </a>
                 {% endfor %}
@@ -78,7 +78,7 @@
                 <div class="text-center text-muted"><p>Нет каналов.</p></div>
             {% endif %}
             <div class="text-center mt-3">
-                <a href="/create_channel" class="btn btn-primary btn-sm">Создать канал</a>
+                <a href="/channel/create_channel" class="btn btn-primary btn-sm">Создать канал</a>
             </div>
         </div>
         <div class="col-4">

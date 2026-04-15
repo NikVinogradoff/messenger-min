@@ -21,7 +21,7 @@
                     <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
                 <button type="submit" class="btn btn-primary">Пригласить</button>
-                <a href="{{ url_for('chat', chat_id=chat.id) }}" class="btn btn-secondary">Назад в чат</a>
+                <a href="/chat/{{ chat.id }}" class="btn btn-secondary">Назад в чат</a>
             </form>
         </div>
     </div>

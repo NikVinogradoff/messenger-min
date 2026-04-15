@@ -8,10 +8,10 @@
             <p class="card-text">
                 Вы действительно хотите выйти из чата "<strong>{{ chat.title }}</strong>"?
             </p>
-            <form action="{{ url_for('leave_chat', chat_id=chat.id) }}" method="post" class="d-inline me-2">
+            <form action="/chat/{{ chat.id }}/leave" method="post" class="d-inline me-2">
                 <button type="submit" class="btn btn-danger">Выйти из чата</button>
             </form>
-            <a href="{{ url_for('chat', chat_id=chat.id) }}" class="btn btn-secondary">Отмена</a>
+            <a href="/chat/{{ chat.id }}" class="btn btn-secondary">Отмена</a>
         </div>
     </div>
 </div>

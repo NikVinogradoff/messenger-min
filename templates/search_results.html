@@ -28,7 +28,7 @@
                     <h5 class="mb-0">{{ chat.title }}</h5>
                     <small class="text-muted">Участников: {{ chat.members|length }}</small>
                 </div>
-                <form action="/join_public_chat/{{ chat.id }}" method="post" style="display: inline;">
+                <form action="/chat/join_public_chat/{{ chat.id }}" method="post" style="display: inline;">
                     <button type="submit" class="btn btn-success btn-sm">Присоединиться</button>
                 </form>
             </div>

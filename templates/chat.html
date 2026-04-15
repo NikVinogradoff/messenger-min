@@ -11,19 +11,19 @@
     {% endif %}
     {% if chatting.is_group %}
         <div>
-            <a href="{{ url_for('chat_members', chat_id=chatting.id) }}"
+            <a href="/chat/{{ chatting.id }}/members"
                class="btn btn-outline-secondary btn-sm me-2">
                 <i class="bi bi-people"></i> Участники ({{ chatting.members|length }})
             </a>
-            <a href="{{ url_for('add_user_to_chat', chat_id=chatting.id) }}" class="btn btn-outline-success btn-sm me-2">
+            <a href="/chat/{{ chatting.id }}/add_user" class="btn btn-outline-success btn-sm me-2">
                 + Пригласить
             </a>
             {% if current_user.id == chatting.creator_id %}
-            <a href="{{ url_for('edit_chat', chat_id=chatting.id) }}" class="btn btn-outline-primary btn-sm me-2">
+            <a href="/chat/{{ chatting.id }}/edit" class="btn btn-outline-primary btn-sm me-2">
                 Редактировать
             </a>
             {% endif %}
-            <a href="{{ url_for('confirm_leave_chat', chat_id=chatting.id) }}" class="btn btn-outline-danger btn-sm">
+            <a href="/chat/confirm_leave_chat/{{ chatting.id }}" class="btn btn-outline-danger btn-sm">
                 Выйти
             </a>
         </div>
@@ -43,7 +43,7 @@
                 <div class="p-2 bg-primary text-white shadow-sm"
                      style="max-width: 75%; font-size: {{ text_size * 10 }}%; border-radius: {{ messages_roundness * 4 }}px;">
                     <div class="fw-bold">{{ message["author_name"] }}</div>
-                    <form method="post" action="{{ url_for('edit_message', chat_id=chatting.id, message_key=key) }}" style="display: none;" id="edit-form-{{ key }}">
+                    <form method="post" action="/chat/{{ chatting.id }}/edit/{{ key }}" style="display: none;" id="edit-form-{{ key }}">
                         <textarea name="text" class="form-control mb-1" rows="2" style="font-size: 0.9em;">{{ message["text"] }}</textarea>
                         <button type="submit" class="btn btn-sm btn-light me-1">Сохранить</button>
                         <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit('{{ key }}')">Отмена</button>
@@ -73,7 +73,7 @@
                         {% endif %}
                         <br>
                         <button class="btn btn-sm btn-light" onclick="startEdit('{{ key }}')">Изменить</button>
-                        <form method="post" action="{{ url_for('delete_message', chat_id=chatting.id, message_key=key) }}" class="d-inline">
+                        <form method="post" action="/chat/{{ chatting.id }}/delete/{{ key }}" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
                         </form>
                     </div>
@@ -132,7 +132,7 @@
                     </div>
                     {% if is_creator %}
                     <div class="text-end mt-1">
-                        <form method="post" action="{{ url_for('delete_message', chat_id=chatting.id, message_key=key) }}" class="d-inline">
+                        <form method="post" action="/chat/{{ chatting.id }}/delete/{{ key }}" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Удалить сообщение</button>
                         </form>
                     </div>
