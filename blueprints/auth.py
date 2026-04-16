@@ -27,7 +27,7 @@ def login():
         if user and user.check_password(login_form.password.data):
             login_user(user, remember=login_form.remember_me.data)
             return redirect("/main_page")
-        return render_template("login.html", form=login_form, message="Пользователь не существует")
+        return render_template("login.html", form=login_form, message="Пользователь не существует", title="Авторизация")
     return render_template("login.html", form=login_form, title="Авторизация")
 
 

@@ -13,6 +13,7 @@ from blueprints import auth, chat, channel
 from data import db_session
 from data.chats import Chat
 from data.users import User
+from forms.change_password_form import ChangePasswordForm
 from resources.chats_resource import ChatsResource, ChatsListResource
 from resources.users_resource import UsersResource, UsersListResource
 
@@ -155,6 +156,23 @@ def settings(user_id):
         return render_template("settings.html", title="Настройки", text_size=settings['text_size'],
                                messages_roundness=settings['messages_roundness'],
                                avatars_roundness=settings["avatars_roundness"], dt=dt)
+
+
+@app.route("/update_password/<int:user_id>", methods=['GET', 'POST'])
+@login_required
+def update_password(user_id):
+    change_pw_form = ChangePasswordForm()
+    if change_pw_form.validate_on_submit():
+        session = db_session.create_session()
+        user = session.query(User).filter(
+            user_id == User.id
+        ).first()
+        user.hash_password(request.form.get("new_password"))
+        if user.check_password(request.form.get("old_password")):
+            return redirect("/profile")
+        return render_template('update_password.html', title='Смена пароля', form=change_pw_form,
+                               message="Введён неверный текущий пароль")
+    return render_template('update_password.html', title='Смена пароля', form=change_pw_form)
 
 
 if __name__ == "__main__":

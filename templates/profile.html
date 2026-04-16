@@ -33,6 +33,9 @@
                 {{ current_user.email }}
             </p>
             <div class="d-grid gap-2 mt-3">
+                <a href="/update_password/{{ current_user.id }}" class="btn btn-outline-dark">Сменить пароль</a>
+            </div>
+            <div class="d-grid gap-2 mt-3">
                 <a href="/settings/{{ current_user.id }}" class="btn btn-outline-secondary">Настройки</a>
             </div>
             <hr class="my-3">
