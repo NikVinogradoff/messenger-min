@@ -167,8 +167,10 @@ def update_password(user_id):
         user = session.query(User).filter(
             user_id == User.id
         ).first()
-        user.hash_password(request.form.get("new_password"))
         if user.check_password(request.form.get("old_password")):
+            user.hash_password(request.form.get("new_password"))
+            session.merge(user)
+            session.commit()
             return redirect("/profile")
         return render_template('update_password.html', title='Смена пароля', form=change_pw_form,
                                message="Введён неверный текущий пароль")
