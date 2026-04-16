@@ -6,7 +6,7 @@
         <div class="card-body text-center p-4">
             <form method="POST" enctype="multipart/form-data" class="mb-3">
                 <label class="d-block position-relative d-inline-block">
-                    <div style="width: 120px; height: 120px; border-radius: 50%; overflow: hidden; margin: 0 auto 20px;">
+                    <div style="width: 120px; height: 120px; border-radius: {{ avatars_roundness * 10 }}%; overflow: hidden; margin: 0 auto 20px;">
                         {% if avatar_url %}
                             <img src="{{ avatar_url }}" alt="Аватар"
                                 style="width: 100%; height: 100%; object-fit: cover;">
@@ -33,7 +33,7 @@
                 {{ current_user.email }}
             </p>
             <div class="d-grid gap-2 mt-3">
-                <a href="/settings" class="btn btn-outline-secondary">Настройки</a>
+                <a href="/settings/{{ current_user.id }}" class="btn btn-outline-secondary">Настройки</a>
             </div>
             <hr class="my-3">
             <div class="d-grid gap-2">

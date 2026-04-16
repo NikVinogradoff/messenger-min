@@ -8,7 +8,7 @@
             <p class="card-text">
                 Вы действительно хотите удалить чат "<strong>{{ chat.title }}</strong>"?
             </p>
-            <form action="/delete_chat/{{ chat.id }}" method="post" class="d-inline">
+            <form action="/chat/delete_chat/{{ chat.id }}" method="post" class="d-inline">
                 <button type="submit" class="btn btn-danger me-2">Да, удалить</button>
             </form>
             <a href="/main_page" class="btn btn-secondary">Отмена</a>

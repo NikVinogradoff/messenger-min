@@ -3,7 +3,7 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-4">
-            <form action="/search_chats" method="get" class="mb-4">
+            <form action="/chat/search_chats" method="get" class="mb-4">
                 <div class="input-group">
                     <input type="text" name="q" class="form-control" placeholder="Искать публичные чаты..." value="{{ request.args.get('q', '') }}">
                     <button class="btn btn-outline-primary" type="submit">Поиск</button>
@@ -16,9 +16,11 @@
                     <a href="/chat/{{ chat.id }}" class="list-group-item list-group-item-action d-flex align-items-center position-relative mt-2">
                         <div class="me-3">
                             {% if chat.avatar_url %}
-                                <img src="{{ url_for('static', filename=chat.avatar_url) }}" alt="Аватар чата" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                                <img src="{{ url_for('static', filename=chat.avatar_url) }}" alt="Аватар чата" width="48" height="48"
+                                     style="object-fit: cover; border-radius: {{ avatars_roundness * 10 }}%;">
                             {% else %}
-                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">{{ chat.title[0] }}</div>
+                                <div class="bg-primary text-white d-flex align-items-center justify-content-center"
+                                     style="width: 48px; height: 48px; border-radius: {{ avatars_roundness * 10 }}%;">{{ chat.title[0] }}</div>
                             {% endif %}
                         </div>
                         <div class="flex-grow-1">
@@ -29,7 +31,7 @@
                             {% if chat.is_public %}<i class="bi bi-eye" title="Публичный чат"></i>{% else %}<i class="bi bi-eye-slash" title="Приватный чат"></i>{% endif %}
                         </div>
                         {% if current_user.id == chat.creator_id %}
-                            <a href="/confirm_delete/{{ chat.id }}" class="btn btn-outline-danger btn-sm" style="z-index: 2;">Удалить</a>
+                            <a href="/chat/confirm_delete/{{ chat.id }}" class="btn btn-outline-danger btn-sm" style="z-index: 2;">Удалить</a>
                         {% endif %}
                     </a>
                 {% endfor %}
@@ -38,11 +40,11 @@
                 <div class="text-center text-muted"><p>Нет групповых чатов.</p></div>
             {% endif %}
             <div class="text-center mt-3">
-                <a href="/create_chat" class="btn btn-primary btn-sm">Создать чат</a>
+                <a href="/chat/create_chat" class="btn btn-primary btn-sm">Создать чат</a>
             </div>
         </div>
         <div class="col-4">
-            <form action="/search_channels" method="get" class="mb-4">
+            <form action="/channel/search_channels" method="get" class="mb-4">
                 <div class="input-group">
                     <input type="text" name="q" class="form-control" placeholder="Искать публичные каналы..." value="{{ request.args.get('q', '') }}">
                     <button class="btn btn-outline-info" type="submit">Найти</button>
@@ -55,9 +57,9 @@
                     <a href="/chat/{{ chat.id }}" class="list-group-item list-group-item-action d-flex align-items-center position-relative mt-2">
                         <div class="me-3">
                             {% if chat.avatar_url %}
-                                <img src="{{ url_for('static', filename=chat.avatar_url) }}" alt="Аватар канала" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                                <img src="{{ url_for('static', filename=chat.avatar_url) }}" alt="Аватар канала" width="48" height="48" style="object-fit: cover; border-radius: {{ avatars_roundness * 10 }}%;">
                             {% else %}
-                                <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">📢</div>
+                                <div class="bg-info text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: {{ avatars_roundness * 10 }}%;">📢</div>
                             {% endif %}
                         </div>
                         <div class="flex-grow-1">
@@ -67,7 +69,7 @@
                             {% if chat.is_public %}<i class="bi bi-eye" title="Публичный канал"></i>{% else %}<i class="bi bi-eye-slash" title="Приватный канал"></i>{% endif %}
                         </div>
                         {% if current_user.id == chat.creator_id %}
-                            <a href="/confirm_delete/{{ chat.id }}" class="btn btn-outline-danger btn-sm" style="z-index: 2;">Удалить</a>
+                            <a href="/chat/confirm_delete/{{ chat.id }}" class="btn btn-outline-danger btn-sm" style="z-index: 2;">Удалить</a>
                         {% endif %}
                     </a>
                 {% endfor %}
@@ -76,7 +78,7 @@
                 <div class="text-center text-muted"><p>Нет каналов.</p></div>
             {% endif %}
             <div class="text-center mt-3">
-                <a href="/create_channel" class="btn btn-primary btn-sm">Создать канал</a>
+                <a href="/channel/create_channel" class="btn btn-primary btn-sm">Создать канал</a>
             </div>
         </div>
         <div class="col-4">
@@ -92,7 +94,8 @@
                 {% if chat.title == "Избранное" %}
                 <a href="/chat/{{ chat.id }}" class="list-group-item list-group-item-action d-flex align-items-center position-relative mt-2">
                     <div class="me-3">
-                        <img src="{{ url_for('static', filename='img/saved_messages_icon.png') }}" alt="Аватар чата" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                        <img src="{{ url_for('static', filename='img/saved_messages_icon.png') }}" alt="Аватар чата"
+                             class="rounded-circle" width="48" height="48" style="object-fit: cover;">
                     </div>
                     <div class="flex-grow-1 mt-2">
                         <h5 class="mb-2">Избранное</h5>
@@ -105,7 +108,7 @@
                         {% for member in chat.members %}
                         {% if member.id != user.id %}
                         {% set filename = 'img/avatars/user_%s.png' | format(member.id) %}
-                        <img src="{{ url_for('static', filename=filename) }}" alt="Аватар чата" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                        <img src="{{ url_for('static', filename=filename) }}" alt="Аватар чата" width="48" height="48" style="object-fit: cover; border-radius: {{ avatars_roundness * 10 }}%;">
                         {% endif %}
                         {% endfor %}
                     </div>

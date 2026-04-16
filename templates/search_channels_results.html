@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <div class="mb-4">
         <h5>Поиск публичных каналов</h5>
-        <form action="/search_channels" method="get" class="d-flex">
+        <form action="/channel/search_channels" method="get" class="d-flex">
             <input type="text" name="q" class="form-control me-2" placeholder="Введите название канала..."
                    value="{{ q }}">
             <button type="submit" class="btn btn-outline-info">Найти</button>
@@ -27,7 +27,7 @@
             <div class="flex-grow-1">
                 <h5 class="mb-0">{{ chat.title }}</h5>
             </div>
-            <form action="/join_public_chat/{{ chat.id }}" method="post" style="display: inline;">
+            <form action="/chat/join_public_chat/{{ chat.id }}" method="post" style="display: inline;">
                 <button type="submit" class="btn btn-outline-info btn-sm">Подписаться</button>
             </form>
         </div>
