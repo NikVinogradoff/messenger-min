@@ -42,6 +42,9 @@ def register():
             email=reg_form.email.data
         )
         guy.hash_password(reg_form.password.data)
+        if reg_form.password.data != reg_form.check_password.data:
+            return render_template("register.html", form=reg_form, title="Регистрация",
+                                   message="Новый пароль не совпадает с повторно введённым")
         session.add(guy)
         session.commit()
         login_user(guy, remember=reg_form.remember_me.data)

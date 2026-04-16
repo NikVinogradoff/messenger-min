@@ -9,4 +9,5 @@ class RegisterForm(LoginForm):
     name = StringField("Имя")
     email = EmailField("Почта", validators=[DataRequired()])
     password = PasswordField("Пароль", validators=[DataRequired()])
+    check_password = PasswordField("Повторите введённый пароль", validators=[DataRequired()])
     submit = SubmitField('Зарегистрироваться')
