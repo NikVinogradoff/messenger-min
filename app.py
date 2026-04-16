@@ -167,8 +167,11 @@ def update_password(user_id):
         user = session.query(User).filter(
             user_id == User.id
         ).first()
-        if user.check_password(request.form.get("old_password")):
-            user.hash_password(request.form.get("new_password"))
+        if change_pw_form.check_password.data != change_pw_form.new_password.data:
+            return render_template('update_password.html', title='Смена пароля', form=change_pw_form,
+                                   message="Новый пароль не совпадает с повторно введённым")
+        elif user.check_password(change_pw_form.old_password.data):
+            user.hash_password(change_pw_form.new_password.data)
             session.merge(user)
             session.commit()
             return redirect("/profile")

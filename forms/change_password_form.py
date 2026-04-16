@@ -6,4 +6,5 @@ from wtforms.validators import DataRequired
 class ChangePasswordForm(FlaskForm):
     old_password = PasswordField('Введите текущий пароль', validators=[DataRequired()])
     new_password = PasswordField('Введите новый пароль', validators=[DataRequired()])
+    check_password = PasswordField('Повторите введённый пароль', validators=[DataRequired()])
     submit = SubmitField('Сменить')
