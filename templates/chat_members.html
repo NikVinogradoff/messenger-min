@@ -10,6 +10,8 @@
     {% for member in chat.members %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <div>
+            <img src="{{ url_for('static', filename='img/avatars/user_%s.png'|format(member.id)) }}" alt="Аватар"
+                 width="24" height="24" style="object-fit: cover; border-radius: {{ avatars_roundness * 10 }}%;">
                 {{ member.name }} {{ member.surname }}
                 {% if member.id == chat.creator_id %}
                     <small class="text-muted">(создатель)</small>

@@ -40,6 +40,8 @@ def user_loader(user_id):
 
 @app.route("/")
 def main():
+    if current_user.is_authenticated:
+        return redirect("/main_page")
     return redirect("/auth/login")
 
 

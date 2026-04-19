@@ -18,7 +18,6 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     email = Column(String, unique=True)
     hashed_password = Column(String)
     is_deleted = Column(Boolean, default=False)
-    is_moderator = Column(Boolean, default=False)
 
     chats = relationship("Chat", secondary="user_chat_association", back_populates="members")
     created_chats = relationship("Chat", back_populates="creator")

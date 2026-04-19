@@ -28,7 +28,8 @@ def chat(chat_id):
         text_size = style_values["text_size"]
         mess_roundness = style_values["messages_roundness"]
         avatars_roundness = style_values["avatars_roundness"]
-    can_send = not chatting.is_channel or current_user.id == chatting.creator_id or current_user.is_moderator
+    moderated_chats_id = list(map(lambda x: int(str(x).split()[1]), current_user.moderated_chats))
+    can_send = not chatting.is_channel or current_user.id == chatting.creator_id or chatting.id in moderated_chats_id
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r", encoding='utf-8') as json_file:
         messages = json.load(json_file)
@@ -232,7 +233,11 @@ def chat_members(chat_id):
     if current_user not in chat.members:
         abort(403)
 
-    return render_template("chat_members.html", chat=chat, title="Участники чата")
+    with open(f'users_settings/user_{current_user.id}_settings.json', 'r', encoding='utf-8') as settings_json:
+        avatars_roundness = int(json.load(settings_json)["avatars_roundness"])
+
+    return render_template("chat_members.html", chat=chat, title="Участники чата",
+                           avatars_roundness=avatars_roundness)
 
 
 @chat_bp.route("/join_public_chat/<int:chat_id>", methods=["POST"])
