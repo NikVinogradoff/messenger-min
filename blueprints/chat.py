@@ -20,16 +20,17 @@ chat_bp = Blueprint('chat', __name__, url_prefix='/chat')
 @login_required
 def chat(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chatting = session.query(Chat).filter(Chat.id == chat_id).first()
-    if not chatting or (not chatting.is_public and current_user not in chatting.members):
+    if not chatting or (not chatting.is_public and user not in chatting.members):
         abort(403)
-    with open(f"users_settings/user_{current_user.id}_settings.json", 'r', encoding='utf-8') as style_json:
+    with open(f"users_settings/user_{user.id}_settings.json", 'r', encoding='utf-8') as style_json:
         style_values = json.load(style_json)
         text_size = style_values["text_size"]
         mess_roundness = style_values["messages_roundness"]
         avatars_roundness = style_values["avatars_roundness"]
-    moderated_chats_id = list(map(lambda x: int(str(x).split()[1]), current_user.moderated_chats))
-    can_send = not chatting.is_channel or current_user.id == chatting.creator_id or chatting.id in moderated_chats_id
+    moderated_chats_id = list(map(lambda x: int(str(x).split()[1]), user.moderated_chats))
+    can_send = not chatting.is_channel or user.id == chatting.creator_id or chatting.id in moderated_chats_id
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r", encoding='utf-8') as json_file:
         messages = json.load(json_file)
@@ -55,6 +56,7 @@ def chat(chat_id):
                     return render_template("chat.html", title=chatting.title, messages=messages,
                                            chatting=chatting, user_avatars={},
                                            text_size=text_size, messages_roundness=mess_roundness,
+                                           avatars_roundness=avatars_roundness,
                                            message_error="Разрешены только: PNG, JPG, JPEG, GIF, TXT, MP4")
                 chat_files_dir = os.path.join(chat_app.static_folder, "chat_files", str(chatting.id))
                 os.makedirs(chat_files_dir, exist_ok=True)
@@ -65,8 +67,8 @@ def chat(chat_id):
         with open(filename, "w", encoding='utf-8') as old_json:
             message_key = f'message_{len(messages.keys()) + 1}'
             messages[message_key] = {
-                "author_id": current_user.id,
-                "author_name": f"{current_user.name} {current_user.surname}",
+                "author_id": user.id,
+                "author_name": f"{user.name} {user.surname}",
                 "text": formatted_text,
                 "datetime": str(datetime.datetime.now())[:-7],
                 "file_url": file_url,
@@ -130,8 +132,9 @@ def create_chat():
 @login_required
 def confirm_delete(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.get(Chat, chat_id)
-    if not chat or current_user not in chat.members or chat.creator_id != current_user.id:
+    if not chat or user not in chat.members or chat.creator_id != user.id:
         abort(404)
     return render_template("confirm_delete.html", chat=chat, title="Подтверждение удаления")
 
@@ -140,8 +143,9 @@ def confirm_delete(chat_id):
 @login_required
 def delete_chat(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.get(Chat, chat_id)
-    if not chat or chat.creator_id != current_user.id:
+    if not chat or chat.creator_id != user.id:
         abort(403)
     chat.is_deleted = True
     session.commit()
@@ -152,10 +156,11 @@ def delete_chat(chat_id):
 @login_required
 def add_user_to_chat(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     if not chat:
         abort(404)
-    if current_user not in chat.members:
+    if user not in chat.members:
         abort(403)
     error = None
     if request.method == "POST":
@@ -179,12 +184,13 @@ def add_user_to_chat(chat_id):
 @login_required
 def leave_chat(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     if not chat:
         abort(404)
-    if current_user not in chat.members:
+    if user not in chat.members:
         abort(403)
-    chat.members.remove(current_user)
+    chat.members.remove(user)
     session.commit()
     if len(chat.members) == 0:
         chat.is_deleted = True
@@ -195,11 +201,14 @@ def leave_chat(chat_id):
 @login_required
 def confirm_leave_chat(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     if not chat:
         abort(404)
-    if current_user not in chat.members:
+    if user not in chat.members:
         abort(403)
+    if chat_id in user.moderated_chats:
+        user.moderated_chats.remove(chat_id)
     return render_template("confirm_leave_chat.html", chat=chat, title="Подтверждение выхода")
 
 
@@ -207,13 +216,14 @@ def confirm_leave_chat(chat_id):
 @login_required
 def remove_user_from_chat(chat_id, user_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     user_to_remove = session.query(User).filter(User.id == user_id).first()
     if not chat or not user_to_remove:
         abort(404)
-    if current_user.id != chat.creator_id:
+    if user.id != chat.creator_id:
         abort(403)
-    if current_user.id == user_to_remove.id:
+    if user.id == user_to_remove.id:
         abort(400, description="Нельзя выгнать самого себя. Используйте 'Выйти из чата'.")
     if user_to_remove not in chat.members:
         abort(400, description="Пользователь не состоит в этом чате.")
@@ -226,14 +236,15 @@ def remove_user_from_chat(chat_id, user_id):
 @login_required
 def chat_members(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
 
     if not chat:
         abort(404)
-    if current_user not in chat.members:
+    if user not in chat.members:
         abort(403)
 
-    with open(f'users_settings/user_{current_user.id}_settings.json', 'r', encoding='utf-8') as settings_json:
+    with open(f'users_settings/user_{user.id}_settings.json', 'r', encoding='utf-8') as settings_json:
         avatars_roundness = int(json.load(settings_json)["avatars_roundness"])
 
     return render_template("chat_members.html", chat=chat, title="Участники чата",
@@ -258,13 +269,16 @@ def join_public_chat(chat_id):
 @login_required
 def confirm_remove_user(chat_id, user_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     user_to_remove = session.query(User).filter(User.id == user_id).first()
 
     if not chat or not user_to_remove:
         abort(404)
-    if current_user.id != chat.creator_id:
+    if user.id != chat.creator_id:
         abort(403)
+    if chat_id in user_to_remove.moderated_chats:
+        user_to_remove.moderated_chats.remove(chat_id)
 
     return render_template("confirm_remove_user.html", chat=chat, user=user_to_remove,
                            title="Подтверждение удаления")
@@ -274,10 +288,11 @@ def confirm_remove_user(chat_id, user_id):
 @login_required
 def edit_chat(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     if not chat:
         abort(404)
-    if current_user.id != chat.creator_id:
+    if user.id != chat.creator_id:
         abort(403)
 
     error = None
@@ -328,15 +343,16 @@ def search_chats():
 @login_required
 def edit_message(chat_id, message_key):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chatting = session.query(Chat).filter(Chat.id == chat_id).first()
-    if not chatting or current_user not in chatting.members:
+    if not chatting or user not in chatting.members:
         abort(403)
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r", encoding='utf-8') as json_file:
         messages = json.load(json_file)
     if message_key not in messages:
         abort(404)
-    if messages[message_key]["author_id"] != current_user.id:
+    if messages[message_key]["author_id"] != user.id:
         abort(403)
     raw_text = request.form.get("text", "").strip()
     if len(raw_text) > 500:
@@ -361,15 +377,16 @@ def edit_message(chat_id, message_key):
 @login_required
 def delete_message(chat_id, message_key):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chatting = session.query(Chat).filter(Chat.id == chat_id).first()
-    if not chatting or current_user not in chatting.members:
+    if not chatting or user not in chatting.members:
         abort(403)
     filename = f"chats_jsons/{chatting.json_url}.json"
     with open(filename, "r", encoding='utf-8') as json_file:
         messages = json.load(json_file)
     if message_key not in messages:
         abort(404)
-    if messages[message_key]["author_id"] != current_user.id and current_user.id != chatting.creator_id:
+    if messages[message_key]["author_id"] != user.id and user.id != chatting.creator_id:
         abort(403)
     del messages[message_key]
     with open(filename, "w", encoding='utf-8') as f:
@@ -381,10 +398,11 @@ def delete_message(chat_id, message_key):
 @login_required
 def give_creator(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     if not chat:
         abort(404)
-    if current_user.id != chat.creator_id:
+    if user.id != chat.creator_id:
         abort(403)
     new_creator_id = request.form.get("user_id", type=int)
     if not new_creator_id:

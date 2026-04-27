@@ -78,8 +78,9 @@ def create_channel():
 @login_required
 def make_moderator(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
-    if not chat or not chat.is_channel or current_user.id != chat.creator_id:
+    if not chat or not chat.is_channel or user.id != chat.creator_id:
         abort(403)
     user_id = request.form.get("user_id", type=int)
     user = session.query(User).filter(User.id == user_id).first()
@@ -96,8 +97,9 @@ def make_moderator(chat_id):
 @login_required
 def remove_moderator(chat_id):
     session = db_session.create_session()
+    user = session.merge(current_user)
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
-    if not chat or not chat.is_channel or current_user.id != chat.creator_id:
+    if not chat or not chat.is_channel or user.id != chat.creator_id:
         abort(403)
 
     user_id = request.form.get("user_id", type=int)
