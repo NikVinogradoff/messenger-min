@@ -65,7 +65,10 @@ def chat(chat_id):
                 file.save(filepath)
                 file_url = url_for('static', filename=f"chat_files/{chatting.id}/{safe_filename}")
         with open(filename, "w", encoding='utf-8') as old_json:
-            message_key = f'message_{len(messages.keys()) + 1}'
+            if messages:
+                message_key = f'message_{int(tuple(messages.keys())[-1].split("_")[1]) + 1}'
+            else:
+                message_key = 'message_1'
             messages[message_key] = {
                 "author_id": user.id,
                 "author_name": f"{user.name} {user.surname}",
