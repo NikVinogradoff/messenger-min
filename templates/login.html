@@ -23,6 +23,7 @@
                     </div>
                 {% endfor %}
             </p>
+            <p class="mb-4"><a class="link-opacity-100-hover" href="/auth/forgot_password">Забыли пароль?</a></p>
             <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
             <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
             <div class="ms-3 me-3">{{ message }}</div>
