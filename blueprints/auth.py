@@ -72,19 +72,19 @@ def forgot_password(): # stage: 1 - ввод почты; 2 - ввод кода �
             except Exception as e:
                 print(e)
                 return render_template("forgot_password.html", title="Забыли пароль", stage=1,
-                                       form=fp_form, email=email,
+                                       form=fp_form, email=email, returning=False,
                                        message="Введена несуществующая почта")
         else:
             email = request.form.get('email')
         if stage == 3:
             if str(request.form.get('code')) != str(fp_form.code.data):
                 return render_template("forgot_password.html", title="Забыли пароль", stage=2,
-                                       form=fp_form, email=email, code=request.form.get('code'),
+                                       form=fp_form, email=email, code=request.form.get('code'), returning=False,
                                        message="Неверный код подтверждения")
         if stage == 4:
             if fp_form.password.data != fp_form.check_password.data:
                 return render_template("forgot_password.html", title="Забыли пароль", stage=3,
-                                       form=fp_form, email=email, code=code,
+                                       form=fp_form, email=email, code=code, returning=False,
                                        message="Новый пароль не совпадает с повторно введённым")
             session = db_session.create_session()
             user = session.query(User).filter(
@@ -100,11 +100,20 @@ def forgot_password(): # stage: 1 - ввод почты; 2 - ввод кода �
         session = db_session.create_session()
         user = session.merge(current_user)
         email = user.email
+        code = str(randint(1, 1000000)).rjust(6, '0')
+        text = f"Код подтверждения для вашего аккаунта: {code}"
+        try:
+            send_email(email, text, theme="Код подтверждения")
+        except Exception as e:
+            print(e)
+            return render_template("forgot_password.html", title="Забыли пароль", stage=2,
+                                   form=fp_form, email=email, returning=True,
+                                   message="Вашей почты не существует")
     else:
         stage = 1
         email = None
     return render_template("forgot_password.html", title="Забыли пароль", stage=stage, form=fp_form,
-                           email=email, code=code)
+                           email=email, returning=False, code=code)
 
 
 @auth_bp.route("/register", methods=['GET', 'POST'])
