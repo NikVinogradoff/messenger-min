@@ -62,9 +62,17 @@ def forgot_password(): # stage: 1 - ввод почты; 2 - ввод кода �
     fp_form = ForgotPasswordForm()
     code = ""
     if request.method == 'POST':
-        stage = int(request.form.get('stage')) + 1
-        if stage == 2:
+        stage = int(request.form.get('stage'))
+        if stage == 1:
             email = fp_form.email.data
+            session = db_session.create_session()
+            users = session.query(User).filter(
+                email == User.email
+            ).all()
+            if not users:
+                return render_template("forgot_password.html", title="Забыли пароль", stage=1,
+                                       form=fp_form, email=None, returning=False,
+                                       message="Пользователя с такой почтой не существует")
             code = str(randint(1, 1000000)).rjust(6, '0')
             text = f"Код подтверждения для вашего аккаунта: {code}"
             try:
@@ -76,12 +84,12 @@ def forgot_password(): # stage: 1 - ввод почты; 2 - ввод кода �
                                        message="Введена несуществующая почта")
         else:
             email = request.form.get('email')
-        if stage == 3:
+        if stage == 2:
             if str(request.form.get('code')) != str(fp_form.code.data):
                 return render_template("forgot_password.html", title="Забыли пароль", stage=2,
                                        form=fp_form, email=email, code=request.form.get('code'), returning=False,
                                        message="Неверный код подтверждения")
-        if stage == 4:
+        if stage == 3:
             if fp_form.password.data != fp_form.check_password.data:
                 return render_template("forgot_password.html", title="Забыли пароль", stage=3,
                                        form=fp_form, email=email, code=code, returning=False,
@@ -95,6 +103,7 @@ def forgot_password(): # stage: 1 - ввод почты; 2 - ввод кода �
             session.commit()
             login_user(user, remember=fp_form.remember_me.data)
             return redirect("/main_page")
+        stage += 1
     elif current_user.is_authenticated:
         stage = 2
         session = db_session.create_session()
