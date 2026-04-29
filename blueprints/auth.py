@@ -52,7 +52,10 @@ def login():
         if user and user.check_password(login_form.password.data):
             login_user(user, remember=login_form.remember_me.data)
             return redirect("/main_page")
-        return render_template("login.html", form=login_form, message="Пользователь не существует",
+        if not user:
+            return render_template("login.html", form=login_form, message="Пользователь не существует",
+                                   title="Авторизация")
+        return render_template("login.html", form=login_form, message="Неверные почта или пароль",
                                title="Авторизация")
     return render_template("login.html", form=login_form, title="Авторизация")
 
@@ -130,6 +133,12 @@ def register():
     reg_form = RegisterForm()
     if reg_form.validate_on_submit():
         session = db_session.create_session()
+        users = session.query(User).filter(
+            reg_form.email.data == User.email
+        ).all()
+        if users:
+            return render_template("register.html", form=reg_form, title="Регистрация",
+                                   message="Пользователь с такой почтой уже существует")
         guy = User(
             surname=reg_form.surname.data,
             name=reg_form.name.data,
