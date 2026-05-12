@@ -187,4 +187,4 @@ if __name__ == "__main__":
     app.register_blueprint(auth.auth_bp)
     app.register_blueprint(chat.chat_bp)
     app.register_blueprint(channel.channel_bp)
-    serve(app, host="127.0.0.1", port=8080, threads=32)
+    serve(app, host="0.0.0.0", port=8082, threads=32)
